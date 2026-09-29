@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { markBack } from '@/router/direction'
 
 // Заголовок экрана: слева название 20px, справа «‹ Назад» 13px — так во всех
 // внутренних экранах макета (фреймы 60:1111, 60:1389 и др.).
@@ -9,7 +10,13 @@ const $props = defineProps({
 
 const router = useRouter()
 
-const back = () => ($props.to ? router.push($props.to) : router.back())
+// С явным адресом это всё равно шаг назад — помечаем, иначе экран приехал бы
+// снизу, как при движении вперёд (см. @/router/direction).
+function back() {
+	if (!$props.to) return router.back()
+	markBack()
+	router.push($props.to)
+}
 </script>
 
 <template>

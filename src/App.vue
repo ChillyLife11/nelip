@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import HttpToasts from '@/components/debug/HttpToasts.vue'
 import { DEBUG_HTTP } from '@/config'
+import { takeBackIntent } from '@/router/direction'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,7 +14,10 @@ let lastPosition = window.history.state?.position ?? 0
 
 router.afterEach(() => {
 	const current = window.history.state?.position ?? 0
-	direction.value = current < lastPosition ? 'slide-down' : 'slide-up'
+	// Назад — либо шаг по истории (позиция уменьшилась), либо явно помеченный
+	// переход по кнопке «Назад» в шапке (там push, позиция растёт).
+	const back = takeBackIntent() || current < lastPosition
+	direction.value = back ? 'slide-down' : 'slide-up'
 	lastPosition = current
 })
 
