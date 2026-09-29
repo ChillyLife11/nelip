@@ -5,6 +5,13 @@
 Формат — [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/),
 версионирование — [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-09-29
+
+### Changed
+
+- Переход между экранами ускорен: 0.16s вместо 0.22s (при `prefers-reduced-motion`
+  — 0.1s вместо 0.15s). Смещение и направление прежние.
+
 ## [0.3.2] - 2026-09-29
 
 ### Changed
