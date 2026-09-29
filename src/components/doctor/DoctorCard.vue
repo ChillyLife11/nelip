@@ -16,16 +16,16 @@ defineProps({
 </script>
 
 <template>
-	<!-- Размеры с фрейма 60:1280: карточка 373×157, текст 13/12px, плашки
-	     времени 73×28, фото прижато вправо во всю высоту.
-	     isolate обязателен: текстовый блок внутри лежит на z-10, а карточка без
-	     своего контекста наложения выпускала его в общий — и он перекрывал
-	     липкую кнопку внизу экрана, перехватывая тапы. -->
 	<button
 		type="button"
 		:class="selected ? 'bg-card-darker' : 'bg-card'"
 		class="relative isolate w-full min-h-39 overflow-hidden rounded-control text-left duration-60 active:scale-[0.99]"
 	>
+		<!-- Размеры с фрейма 60:1280: карточка 373×157, текст 13/12px, плашки
+		     времени 73×28, фото прижато вправо во всю высоту.
+		     isolate обязателен: текстовый блок внутри лежит на z-10, а карточка без
+		     своего контекста наложения выпускала его в общий — и он перекрывал
+		     липкую кнопку внизу экрана, перехватывая тапы. -->
 		<div class="relative z-10 py-5 pl-5 pr-38 space-y-0.5">
 			<div class="text-13 font-bold leading-tight text-brand">{{ surname }}</div>
 			<div v-if="name" class="text-13 leading-tight text-brand">{{ name }}</div>

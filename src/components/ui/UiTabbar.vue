@@ -22,9 +22,9 @@ const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
 </script>
 
 <template>
-	<!-- sticky, а не fixed: плашка остаётся в потоке, контент под ней не
-	     прячется. mt-auto прижимает её к низу, когда контента меньше экрана. -->
 	<div class="sticky bottom-5 z-10 mt-auto pt-2.5">
+		<!-- sticky, а не fixed: плашка остаётся в потоке, контент под ней не
+		     прячется. mt-auto прижимает её к низу, когда контента меньше экрана. -->
 		<div class="flex items-center justify-between h-22.25 px-4 rounded-bar bg-card">
 			<button
 				type="button"

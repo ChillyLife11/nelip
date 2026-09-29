@@ -20,15 +20,15 @@ function toggle(id) {
 </script>
 
 <template>
-	<!-- pointer-events-auto обязателен: пока открыто модальное окно (согласия,
-	     шторки, подтверждение записи), reka-ui гасит указатель у всего body, и
-	     тост не нажимался — тап уходил в подложку окна. @pointerdown.stop не даёт
-	     этому же тапу закрыть само окно. -->
 	<div
 		v-if="entries.length"
 		class="fixed top-2 right-2 z-[100] flex flex-col items-end gap-1 max-w-[92vw] w-80 pointer-events-auto"
 		@pointerdown.stop
 	>
+		<!-- pointer-events-auto обязателен: пока открыто модальное окно (согласия,
+		     шторки, подтверждение записи), reka-ui гасит указатель у всего body, и
+		     тост не нажимался — тап уходил в подложку окна. @pointerdown.stop не даёт
+		     этому же тапу закрыть само окно. -->
 		<button
 			type="button"
 			class="px-2 py-0.5 rounded-full bg-black/70 text-[10px] text-white"

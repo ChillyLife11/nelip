@@ -32,9 +32,9 @@ const icon = computed(() => {
 </script>
 
 <template>
-	<!-- Размеры с фрейма 60:1163: карточка 373×200, внутри три белые строки по
-	     60px с зазором 5, иконка статуса 45×45, «Повторить» 167×50. -->
 	<div class="p-[5px] space-y-[5px] rounded-control bg-card">
+		<!-- Размеры с фрейма 60:1163: карточка 373×200, внутри три белые строки по
+		     60px с зазором 5, иконка статуса 45×45, «Повторить» 167×50. -->
 		<div class="relative flex items-center justify-center h-15 px-14 rounded-control bg-page">
 			<span class="text-13 text-center text-gray line-clamp-2">{{ $props.service }}</span>
 			<div
