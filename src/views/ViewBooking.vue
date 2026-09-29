@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import UiLoader from '@/components/ui/UiLoader.vue'
+import UiPageTitle from '@/components/ui/UiPageTitle.vue'
 import UiBtn from '@/components/ui/UiBtn.vue'
 import { getBranches, loadedBranches, shortAddress } from '@/api/branches'
 import { useBooking } from '@/composables/useBooking'
@@ -74,7 +75,7 @@ const nextStep = computed(() => steps.value.find((step) => !step.value) ?? steps
 
 <template>
 	<div class="min-h-screen flex flex-col p-2.5">
-		<h1 class="text-20 leading-[1] tracking-[-0.6px] font-bold text-brand mb-5">Записаться</h1>
+		<UiPageTitle to="/profile">Записаться</UiPageTitle>
 
 		<UiLoader v-if="loading" label="Загружаем клинику" />
 
