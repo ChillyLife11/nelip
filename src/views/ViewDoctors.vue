@@ -96,7 +96,7 @@ function submit() {
 			По выбранной услуге врачей нет — попробуйте выбрать другую.
 		</div>
 
-		<div v-else class="space-y-4 pb-5">
+		<div v-else class="space-y-2.5 pb-2.5">
 			<DoctorCard
 				v-for="doctor in doctors"
 				:key="doctor.id"
@@ -113,7 +113,7 @@ function submit() {
 
 		<UiBtn
 			:disabled="!selected"
-			class="sticky bottom-7.5 left-0 z-10 mt-auto mb-5"
+			class="sticky bottom-2 left-0 z-10 min-h-17.75 mt-auto mb-2 text-20 leading-[0.9] tracking-[-0.6px]"
 			fluid
 			@click="submit"
 		>

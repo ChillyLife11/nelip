@@ -275,12 +275,12 @@ async function submit() {
 
 		<UiLoader v-if="loading" label="Загружаем расписание" />
 
-		<div v-else-if="failed" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="failed" class="p-5 rounded-control bg-card text-13 text-gray">
 			Не удалось загрузить расписание. Попробуйте позже.
 		</div>
 
-		<div v-else class="space-y-4 pb-5">
-			<div class="p-5 rounded-[30px] bg-card">
+		<div v-else class="space-y-2.5 pb-2.5">
+			<div class="p-4 rounded-card border border-hairline bg-page">
 				<CalendarRoot
 					v-slot="{ weekDays, grid }"
 					v-model="selectedDate"
@@ -342,7 +342,7 @@ async function submit() {
 									<CalendarCellTrigger
 										:day="weekDate"
 										:month="month.value"
-										class="flex items-center justify-center w-9 h-9 rounded-full text-15 text-black duration-60 data-outside-view:invisible data-outside-view:pointer-events-none data-disabled:line-through data-disabled:decoration-2 data-disabled:text-gray/40 data-disabled:pointer-events-none data-unavailable:text-gray/40 data-unavailable:pointer-events-none data-today:font-semibold data-selected:bg-[#f7dbe3] data-selected:text-gray"
+										class="flex items-center justify-center w-9 h-9 rounded-full text-15 text-black duration-60 data-outside-view:invisible data-outside-view:pointer-events-none data-disabled:line-through data-disabled:decoration-2 data-disabled:text-gray/40 data-disabled:pointer-events-none data-unavailable:text-gray/40 data-unavailable:pointer-events-none data-today:font-semibold data-selected:bg-day-selected data-selected:text-gray"
 									/>
 								</CalendarCell>
 							</CalendarGridRow>
@@ -351,12 +351,12 @@ async function submit() {
 				</CalendarRoot>
 			</div>
 
-			<div v-if="!openDates.size" class="p-5 rounded-4xl bg-card text-15 text-gray">
+			<div v-if="!openDates.size" class="p-5 rounded-control bg-card text-13 text-gray">
 				На ближайшие дни у выбранного врача нет расписания — вернитесь назад и выберите
 				другого.
 			</div>
 
-			<div v-else class="p-5 rounded-[30px] bg-card space-y-2.5">
+			<div v-else class="p-4 rounded-card bg-card space-y-2.5">
 				<div class="grid grid-cols-2 gap-2.5">
 					<button
 						v-for="period in periods"
@@ -367,7 +367,7 @@ async function submit() {
 								? 'bg-brand text-white'
 								: 'border border-brand text-brand'
 						"
-						class="flex items-center justify-center min-h-9 py-1 px-2 rounded-full text-13 duration-40 active:scale-[0.984]"
+						class="flex items-center justify-center min-h-9.25 py-1 px-2 rounded-control text-13 duration-40 active:scale-[0.984]"
 						@click="selectedPeriod = period.label"
 					>
 						{{ period.label }}
@@ -389,7 +389,7 @@ async function submit() {
 								? 'bg-brand text-white'
 								: 'border border-brand text-brand'
 						"
-						class="flex items-center justify-center min-h-9 py-1 px-2 rounded-full text-13 duration-40 active:scale-[0.984] disabled:opacity-40 disabled:pointer-events-none"
+						class="flex items-center justify-center min-h-8.5 py-1 px-2 rounded-control text-13 duration-40 active:scale-[0.984] disabled:opacity-40 disabled:pointer-events-none"
 						@click="selectedTime = slot"
 					>
 						{{ slot }}
@@ -400,7 +400,7 @@ async function submit() {
 
 		<UiBtn
 			:disabled="!selectedTime"
-			class="sticky bottom-7.5 left-0 mt-auto mb-5"
+			class="sticky bottom-2 left-0 min-h-17.75 mt-auto mb-2 text-20 leading-[0.9] tracking-[-0.6px]"
 			fluid
 			@click="review"
 		>
@@ -421,7 +421,7 @@ async function submit() {
 			<div
 				role="status"
 				aria-live="polite"
-				class="w-full max-w-85 py-10 px-6 rounded-4xl text-center bg-card-darker shadow-accent"
+				class="w-full max-w-85 py-10 px-6 rounded-control text-center bg-card"
 			>
 				<div class="text-lg text-gray">Ваша запись успешно оформлена!</div>
 				<UiBtn class="mt-6" to="/profile">Перейти в профиль</UiBtn>

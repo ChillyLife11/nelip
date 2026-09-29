@@ -78,6 +78,16 @@ async function cancelShown() {
 
 const hasAppointments = computed(() => !loading.value && !failed.value && current.value.length)
 
+// Четыре ячейки записи в порядке макета: услуга, дата, время, врач.
+function appointmentCells(appointment) {
+	return [
+		{ icon: NotebookPen, label: serviceTitle(appointment) },
+		{ icon: CalendarDays, label: longDateLabel(appointment) },
+		{ icon: Clock, label: timeRange(appointment) },
+		{ icon: User, label: doctorName(appointment) || 'Врач не указан' },
+	]
+}
+
 // Слайдер держим в DOM всегда (прячем через v-show): embla инициализируется
 // один раз в onMounted и не подхватил бы контейнер, появившийся после запроса.
 // После загрузки пересчитываем размеры — слайды к этому моменту уже отрисованы.
@@ -91,14 +101,16 @@ onMounted(async () => {
 </script>
 
 <template>
+	<!-- Размеры с фреймов 60:399 и 66:2609 (393×852): карточка 374×263 со
+	     скруглением 10, внутренние элементы — 5. -->
 	<div class="min-h-screen flex flex-col p-2.5 space-y-2.5">
-		<div class="p-2.5 rounded-card bg-card">
-			<!-- Пока записей нет, аватар и имя стоят по центру; с записями шапка
-			     сжимается в строку, чтобы уместить слайдер. -->
+		<div class="p-[5px] rounded-card bg-card">
+			<!-- Без записей аватар и имя по центру, с записями — строкой, чтобы
+			     уместился слайдер. -->
 			<div
 				:class="
 					hasAppointments
-						? 'flex items-center gap-4'
+						? 'flex items-center gap-2.5'
 						: 'flex flex-col items-center gap-2.5'
 				"
 				class="pb-2.5"
@@ -106,10 +118,11 @@ onMounted(async () => {
 				<img
 					:src="clientPhoto || defaultPhoto"
 					alt="Пациент"
-					:class="hasAppointments ? 'w-20 h-20' : 'w-25 h-25'"
-					class="shrink-0 rounded-card object-cover object-center bg-brand"
+					class="shrink-0 w-20 h-20 rounded-control object-cover object-center bg-brand"
 				/>
-				<div class="text-2xl text-gray truncate">{{ clientName }}</div>
+				<div class="text-25 leading-[1.2] tracking-[-0.75px] text-gray-dark truncate">
+					{{ clientName }}
+				</div>
 			</div>
 
 			<UiLoader v-if="loading" label="Загружаем записи" class="py-2" />
@@ -122,54 +135,40 @@ onMounted(async () => {
 				Активных записей нет — запишитесь на приём.
 			</div>
 
-			<div
-				v-show="hasAppointments"
-				class="flex items-center gap-1 border-t border-page pt-2.5"
-			>
+			<!-- Разделитель во всю ширину карточки: вылезает за её внутренние 5px. -->
+			<div v-show="hasAppointments" class="-mx-[5px] border-t border-hairline"></div>
+
+			<div v-show="hasAppointments" class="relative flex items-center pt-[5px]">
 				<button
 					type="button"
 					:disabled="!canScrollPrev"
-					class="shrink-0 -ml-1 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
+					class="absolute left-0 z-10 flex items-center justify-center w-7.5 h-7.5 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
 					aria-label="Предыдущая запись"
 					@click="scrollPrev"
 				>
-					<ChevronLeft :size="26" :stroke-width="2" />
+					<ChevronLeft :size="26" :stroke-width="2.5" />
 				</button>
 
 				<div ref="emblaRef" class="grow overflow-hidden">
 					<div class="flex">
-						<!-- Четыре ячейки: услуга, дата, время, врач — каждая со своей
-						     иконкой, как в макете. -->
+						<!-- Четыре ячейки 180×75: услуга, дата, время, врач. -->
 						<div
 							v-for="appointment in current"
 							:key="appointment.id"
-							class="shrink-0 basis-full min-w-0 grid grid-cols-2 gap-2"
+							class="shrink-0 basis-full min-w-0 grid grid-cols-2 gap-[5px]"
 						>
 							<div
-								class="flex flex-col items-center justify-center gap-1 min-h-24 p-2 rounded-control bg-page text-13 text-center text-gray"
+								v-for="cell in appointmentCells(appointment)"
+								:key="cell.label"
+								class="flex flex-col items-center justify-center gap-1 min-h-18.75 py-2 px-7 rounded-control bg-page text-13 text-center text-gray"
 							>
-								<NotebookPen :size="20" :stroke-width="1.5" class="text-brand" />
-								<span class="line-clamp-2">{{ serviceTitle(appointment) }}</span>
-							</div>
-							<div
-								class="flex flex-col items-center justify-center gap-1 min-h-24 p-2 rounded-control bg-page text-13 text-center text-gray"
-							>
-								<CalendarDays :size="20" :stroke-width="1.5" class="text-brand" />
-								<span class="line-clamp-2">{{ longDateLabel(appointment) }}</span>
-							</div>
-							<div
-								class="flex flex-col items-center justify-center gap-1 min-h-24 p-2 rounded-control bg-page text-13 text-center text-gray"
-							>
-								<Clock :size="20" :stroke-width="1.5" class="text-brand" />
-								<span>{{ timeRange(appointment) }}</span>
-							</div>
-							<div
-								class="flex flex-col items-center justify-center gap-1 min-h-24 p-2 rounded-control bg-page text-13 text-center text-gray"
-							>
-								<User :size="20" :stroke-width="1.5" class="text-brand" />
-								<span class="line-clamp-2">
-									{{ doctorName(appointment) || 'Врач не указан' }}
-								</span>
+								<component
+									:is="cell.icon"
+									:size="18"
+									:stroke-width="1.5"
+									class="text-brand"
+								/>
+								<span class="line-clamp-2">{{ cell.label }}</span>
 							</div>
 						</div>
 					</div>
@@ -178,11 +177,11 @@ onMounted(async () => {
 				<button
 					type="button"
 					:disabled="!canScrollNext"
-					class="shrink-0 -mr-1 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
+					class="absolute right-0 z-10 flex items-center justify-center w-7.5 h-7.5 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
 					aria-label="Следующая запись"
 					@click="scrollNext"
 				>
-					<ChevronRight :size="26" :stroke-width="2" />
+					<ChevronRight :size="26" :stroke-width="2.5" />
 				</button>
 			</div>
 
@@ -192,13 +191,21 @@ onMounted(async () => {
 			     сейчас нужно прийти на назначенный приём, а не завести новый.
 			     Записаться всё равно можно плюсом в таббаре. В макете кнопка
 			     нарисована и здесь — расхождение осознанное. -->
-			<div v-if="!loading" class="flex gap-2.5 pt-2.5">
-				<UiBtn v-if="!hasAppointments" fluid @click="startBookingFlow">Записаться</UiBtn>
+			<div v-if="!loading" class="flex gap-[5px] pt-[5px]">
+				<UiBtn
+					v-if="!hasAppointments"
+					class="min-h-29.5 text-20 leading-[0.9] tracking-[-0.6px]"
+					fluid
+					@click="startBookingFlow"
+				>
+					Записаться
+				</UiBtn>
 				<UiBtn
 					v-if="shownAppointment"
 					color="secondary"
 					:soft="canceling"
 					:disabled="canceling"
+					class="min-h-24.5 text-20 leading-[0.9] tracking-[-0.6px]"
 					fluid
 					@click="cancelShown"
 				>
@@ -209,13 +216,13 @@ onMounted(async () => {
 
 		<RouterLink
 			to="/clinic"
-			class="flex items-center justify-center min-h-25 p-5 rounded-card bg-card text-center text-2xl text-brand duration-60 active:scale-[0.98]"
+			class="flex items-center justify-center min-h-27 p-5 rounded-control bg-card text-center text-20 font-bold leading-[0.9] tracking-[-0.6px] text-brand duration-60 active:scale-[0.98]"
 		>
 			Информация о клинике
 		</RouterLink>
 		<RouterLink
 			to="/equipment"
-			class="flex items-center justify-center min-h-25 p-5 rounded-card bg-card text-center text-2xl text-brand duration-60 active:scale-[0.98]"
+			class="flex items-center justify-center min-h-27 p-5 rounded-control bg-card text-center text-20 font-bold leading-[0.9] tracking-[-0.6px] text-brand duration-60 active:scale-[0.98]"
 		>
 			Наше оборудование
 		</RouterLink>
@@ -225,7 +232,7 @@ onMounted(async () => {
 				:href="LEGAL_DOC"
 				target="_blank"
 				rel="noopener"
-				class="text-[17px] underline text-brand duration-60 active:scale-[0.96]"
+				class="text-20 leading-[1.2] tracking-[-0.6px] underline text-brand duration-60 active:scale-[0.96]"
 				@click="openDocument($event, LEGAL_DOC)"
 			>
 				Правовая информация

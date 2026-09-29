@@ -16,7 +16,7 @@ const router = useRouter()
 				v-for="item in equipment"
 				:key="item.id"
 				type="button"
-				class="flex items-center w-full min-h-17 py-4 px-5 rounded-card bg-card text-left text-[17px] text-brand duration-60 active:scale-[0.98] active:bg-card-darker"
+				class="flex items-center w-full min-h-15 py-2 px-5 rounded-control bg-card text-left text-13 text-brand duration-60 active:scale-[0.98] active:bg-card-darker"
 				@click="router.push(`/equipment/${item.id}`)"
 			>
 				{{ item.title }}

@@ -9,7 +9,6 @@ import {
 	useAppointments,
 	serviceTitle,
 	doctorName,
-	branchAddress,
 	dateLabel,
 	statusKind,
 	repeatSelection,
@@ -40,25 +39,24 @@ onMounted(load)
 	<!-- На экране только карточки записей — плюс таббар снизу, как на главной.
 	     Наверх ведёт заголовок со стрелкой. -->
 	<div class="min-h-screen flex flex-col px-2.5 pt-2.5">
-		<UiPageTitle to="/profile">История записей</UiPageTitle>
+		<UiPageTitle to="/profile">История посещений</UiPageTitle>
 
 		<UiLoader v-if="loading" label="Загружаем записи" />
 
-		<div v-else-if="failed" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="failed" class="p-5 rounded-control bg-card text-13 text-gray">
 			Не удалось загрузить записи. Попробуйте позже.
 		</div>
 
-		<div v-else-if="!history.length" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="!history.length" class="p-5 rounded-control bg-card text-13 text-gray">
 			Завершённых записей пока нет — актуальные смотрите на главной.
 		</div>
 
-		<div v-else class="space-y-2.5 pb-5">
+		<div v-else class="space-y-[5px] pb-2.5">
 			<HistoryCard
 				v-for="appointment in history"
 				:key="appointment.id"
 				:service="serviceTitle(appointment)"
 				:doctor="doctorName(appointment)"
-				:address="branchAddress(appointment)"
 				:date="dateLabel(appointment)"
 				:status="statusKind(appointment)"
 				@repeat="repeat(appointment)"

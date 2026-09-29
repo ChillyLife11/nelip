@@ -8,16 +8,14 @@ import { clinicInfo } from '@/content/clinic'
 	<div class="min-h-screen flex flex-col p-2.5">
 		<UiPageTitle to="/profile">Информация о клинике</UiPageTitle>
 
-		<div class="rounded-card bg-card overflow-hidden">
-			<div class="p-1.5 bg-page">
-				<img :src="clinicInfo.photo" alt="" class="w-full rounded-card" />
-			</div>
-			<div class="p-4 space-y-3">
-				<div class="text-[17px] text-brand">{{ clinicInfo.title }}</div>
+		<div class="p-[5px] rounded-control bg-card">
+			<img :src="clinicInfo.photo" alt="" class="w-full rounded-control object-cover" />
+			<div class="p-[15px] space-y-2.5">
+				<div class="text-13 font-bold text-brand">{{ clinicInfo.title }}</div>
 				<p
 					v-for="text in clinicInfo.paragraphs"
 					:key="text"
-					class="text-15 text-gray leading-snug"
+					class="text-12 leading-[1.5] text-gray"
 				>
 					{{ text }}
 				</p>

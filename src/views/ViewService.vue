@@ -64,12 +64,12 @@ function submit() {
 			<template v-else>В этом филиале услуг нет — выберите другой филиал.</template>
 		</div>
 
-		<RadioGroupRoot v-else v-model="selected" class="space-y-2.5 pb-5">
+		<RadioGroupRoot v-else v-model="selected" class="space-y-2.5 pb-2.5">
 			<RadioGroupItem
 				v-for="service in services"
 				:key="service.id"
 				:value="service.id"
-				class="flex items-center w-full min-h-20 py-4 px-6 rounded-4xl border border-transparent bg-card text-left text-gray duration-60 active:scale-[0.96] data-[state=checked]:border-brand data-[state=checked]:bg-card-darker data-[state=checked]:shadow-accent"
+				class="flex items-center w-full min-h-15 py-2 px-5 rounded-control bg-card text-left text-13 text-brand duration-60 active:scale-[0.98] data-[state=checked]:bg-card-darker"
 			>
 				{{ service.title }}
 			</RadioGroupItem>
@@ -77,7 +77,7 @@ function submit() {
 
 		<UiBtn
 			:disabled="!selected"
-			class="sticky bottom-7.5 left-0 mt-auto mb-5"
+			class="sticky bottom-2 left-0 min-h-17.75 mt-auto mb-2 text-20 leading-[0.9] tracking-[-0.6px]"
 			fluid
 			@click="submit"
 		>

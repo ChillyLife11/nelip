@@ -23,10 +23,17 @@
 	/* Выбранный день в календаре. */
 	--color-day-selected: #eedde3;
 	/* Тонкая рамка карточки календаря. */
-	--color-hairline: #ddebf5;
+	--color-hairline: #cce9fc;
 
 	--text-15: 15px;
 	--text-13: 13px;
+	/* Размеры из макета: 25px — имя пациента, 20px — кнопки, плитки и ссылки. */
+	--text-12: 12px;
+	--text-20: 20px;
+	--text-25: 25px;
+
+	/* Имя пациента чуть темнее основного серого. */
+	--color-gray-dark: #6d6d6d;
 
 	--shadow-accent: 0px 4px 4px rgba(0, 0, 0, 0.25), inset 0px 4px 4px rgba(0, 0, 0, 0.25);
 }
@@ -37,10 +44,11 @@
 	margin-bottom: 30px;
 }
 
-/* Скругления в макете умеренные, а не пилюли: карточки 16px, кнопки 12px. */
+/* Скругления из макета: карточки 10px, кнопки и плитки 5px, таббар 20px. */
 @theme {
-	--radius-card: 16px;
-	--radius-control: 12px;
+	--radius-card: 10px;
+	--radius-control: 5px;
+	--radius-bar: 20px;
 }
 
 @font-face {

@@ -6,6 +6,9 @@ import UiBtn from '@/components/ui/UiBtn.vue'
 import { getBranches, loadedBranches, shortAddress } from '@/api/branches'
 import { useBooking } from '@/composables/useBooking'
 
+// Логотип клиники из макета — лежит рядом со сборкой, в public/images.
+const logo = `${import.meta.env.BASE_URL}images/logo-nelip.png`
+
 // Экран записи — хаб: три плитки (услуга, врач, дата и время) и шапка с
 // клиникой. Шаги можно проходить в любом порядке, поэтому отдельного экрана
 // выбора филиала нет: клиника одна, филиал подставляем сами.
@@ -71,20 +74,20 @@ const nextStep = computed(() => steps.value.find((step) => !step.value) ?? steps
 
 <template>
 	<div class="min-h-screen flex flex-col p-2.5">
-		<h1 class="text-[26px] leading-[1.1] text-brand mb-4">Записаться</h1>
+		<h1 class="text-20 leading-[1] tracking-[-0.6px] font-bold text-brand mb-5">Записаться</h1>
 
 		<UiLoader v-if="loading" label="Загружаем клинику" />
 
-		<div v-else-if="failed" class="p-5 rounded-card bg-card text-15 text-gray">
+		<div v-else-if="failed" class="p-5 rounded-control bg-card text-13 text-gray">
 			Не удалось загрузить данные клиники. Попробуйте позже.
 		</div>
 
 		<template v-else>
-			<div class="flex items-center gap-2.5 mb-4">
-				<div class="shrink-0 w-12 h-12 rounded-full bg-brand"></div>
-				<div class="leading-tight">
-					<div class="text-15 text-brand">{{ branch?.title }}</div>
-					<div class="text-13 text-gray">{{ shortAddress(branch) }}</div>
+			<div class="flex items-center gap-[15px] mb-5">
+				<img :src="logo" alt="" class="shrink-0 w-7.5 h-7.5 rounded-control object-cover" />
+				<div class="leading-[1.2]">
+					<div class="text-12 text-brand">{{ branch?.title }}</div>
+					<div class="text-12 text-gray">{{ shortAddress(branch) }}</div>
 				</div>
 			</div>
 
@@ -97,7 +100,7 @@ const nextStep = computed(() => steps.value.find((step) => !step.value) ?? steps
 						step.wide ? 'col-span-2' : '',
 						step.value ? 'bg-card-darker' : 'bg-card',
 					]"
-					class="flex items-center justify-center min-h-32 p-5 rounded-card text-center text-15 text-brand duration-60 active:scale-[0.98]"
+					class="flex items-center justify-center min-h-25 p-5 rounded-control text-center text-13 text-brand duration-60 active:scale-[0.98]"
 					@click="router.push(step.to)"
 				>
 					{{ step.value || step.prompt }}
@@ -106,7 +109,7 @@ const nextStep = computed(() => steps.value.find((step) => !step.value) ?? steps
 		</template>
 
 		<UiBtn
-			class="sticky bottom-7.5 left-0 z-10 mt-auto mb-5"
+			class="sticky bottom-2 left-0 z-10 min-h-17.75 mt-auto mb-2 text-20 leading-[0.9] tracking-[-0.6px]"
 			fluid
 			@click="router.push(nextStep.to)"
 		>

@@ -24,8 +24,8 @@ const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
 <template>
 	<!-- sticky, а не fixed: плашка остаётся в потоке, контент под ней не
 	     прячется. mt-auto прижимает её к низу, когда контента меньше экрана. -->
-	<div class="sticky bottom-2.5 z-10 mt-auto pt-2.5">
-		<div class="flex items-center justify-between px-5 py-2.5 rounded-card bg-card">
+	<div class="sticky bottom-5 z-10 mt-auto pt-2.5">
+		<div class="flex items-center justify-between h-22.25 px-4 rounded-bar bg-card">
 			<button
 				type="button"
 				aria-label="Главная"
@@ -33,16 +33,16 @@ const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
 				class="flex items-center justify-center w-14 h-14 rounded-full bg-page duration-60 active:scale-[0.94]"
 				@click="go('/profile')"
 			>
-				<House stroke-width="1.3" size="26" />
+				<House stroke-width="1.3" size="27" />
 			</button>
 
 			<button
 				type="button"
 				aria-label="Записаться"
-				class="flex items-center justify-center w-18 h-18 rounded-full bg-brand text-brand-foreground duration-60 active:scale-[0.94]"
+				class="flex items-center justify-center w-14 h-14 rounded-full bg-brand text-brand-foreground duration-60 active:scale-[0.94]"
 				@click="startBookingFlow"
 			>
-				<Plus stroke-width="2" size="34" />
+				<Plus stroke-width="2" size="31" />
 			</button>
 
 			<button
@@ -52,7 +52,7 @@ const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
 				class="flex items-center justify-center w-14 h-14 rounded-full bg-page duration-60 active:scale-[0.94]"
 				@click="go('/active')"
 			>
-				<GalleryHorizontalEnd stroke-width="1.3" size="26" />
+				<GalleryHorizontalEnd stroke-width="1.3" size="27" />
 			</button>
 		</div>
 	</div>
