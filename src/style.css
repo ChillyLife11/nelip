@@ -126,45 +126,46 @@ body {
 	}
 }
 
-/* Анимация переходов между роутами */
-.slide-left-enter-active,
-.slide-left-leave-active,
-.slide-right-enter-active,
-.slide-right-leave-active {
+/* Анимация переходов между роутами: вперёд экран приходит снизу, назад —
+   сверху. Смещение небольшое (24px) — это подсказка направления, а не шторка. */
+.slide-up-enter-active,
+.slide-up-leave-active,
+.slide-down-enter-active,
+.slide-down-leave-active {
 	transition:
 		opacity 0.22s ease,
 		transform 0.22s ease;
 }
 
-.slide-left-enter-from {
+.slide-up-enter-from {
 	opacity: 0;
-	transform: translateX(24px);
+	transform: translateY(24px);
 }
-.slide-left-leave-to {
+.slide-up-leave-to {
 	opacity: 0;
-	transform: translateX(-24px);
+	transform: translateY(-24px);
 }
 
-.slide-right-enter-from {
+.slide-down-enter-from {
 	opacity: 0;
-	transform: translateX(-24px);
+	transform: translateY(-24px);
 }
-.slide-right-leave-to {
+.slide-down-leave-to {
 	opacity: 0;
-	transform: translateX(24px);
+	transform: translateY(24px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.slide-left-enter-active,
-	.slide-left-leave-active,
-	.slide-right-enter-active,
-	.slide-right-leave-active {
+	.slide-up-enter-active,
+	.slide-up-leave-active,
+	.slide-down-enter-active,
+	.slide-down-leave-active {
 		transition: opacity 0.15s ease;
 	}
-	.slide-left-enter-from,
-	.slide-left-leave-to,
-	.slide-right-enter-from,
-	.slide-right-leave-to {
+	.slide-up-enter-from,
+	.slide-up-leave-to,
+	.slide-down-enter-from,
+	.slide-down-leave-to {
 		transform: none;
 	}
 }

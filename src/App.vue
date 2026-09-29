@@ -7,13 +7,13 @@ import { DEBUG_HTTP } from '@/config'
 const router = useRouter()
 const route = useRoute()
 
-// направление перехода: вперёд — слайд влево, назад — слайд вправо
-const direction = ref('slide-left')
+// направление перехода: вперёд — экран выезжает снизу, назад — сверху
+const direction = ref('slide-up')
 let lastPosition = window.history.state?.position ?? 0
 
 router.afterEach(() => {
 	const current = window.history.state?.position ?? 0
-	direction.value = current < lastPosition ? 'slide-right' : 'slide-left'
+	direction.value = current < lastPosition ? 'slide-down' : 'slide-up'
 	lastPosition = current
 })
 
