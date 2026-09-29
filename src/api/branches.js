@@ -124,13 +124,16 @@ export function scheduleDates(branch, masterId = null) {
 	return new Set(open)
 }
 
-// Адрес приходит как «город Улан-Удэ, Павлова, 59А» — в макете только улица
-// и дом: «ул. Павлова, 59А». Нужен и в списке филиалов, и в сводке записи.
+// Адрес приходит с городом впереди — «город Улан-Удэ, Павлова, 59А» или просто
+// «Улан-Удэ, Павлова, 5». В макете только улица и дом: «ул. Павлова, 5».
 export function shortAddress(branch) {
-	const parts = (branch?.address ?? '')
+	let parts = (branch?.address ?? '')
 		.split(',')
 		.map((part) => part.trim())
 		.filter((part) => part && !/^(город|г\.?)\s/i.test(part))
+	// Город без приставки «город» отсечь по маске нельзя — убираем первую часть,
+	// если после неё ещё остаются улица и дом.
+	if (parts.length >= 3) parts = parts.slice(1)
 	if (!parts.length) return branch?.title ?? ''
 	const [street, ...rest] = parts
 	const named = /^(ул|улица|просп|пр-т|мкр|бул)/i.test(street) ? street : `ул. ${street}`

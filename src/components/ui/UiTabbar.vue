@@ -1,6 +1,5 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
-import UiBtn from '@/components/ui/UiBtn.vue'
 import { House, Plus, GalleryHorizontalEnd } from '@lucide/vue'
 import { useBooking } from '@/composables/useBooking'
 
@@ -8,35 +7,53 @@ const route = useRoute()
 const router = useRouter()
 const { startBooking } = useBooking()
 
-// Плюс — обычный сценарий записи: филиал → услуга → врач → дата/время.
-function startFromBranch() {
+// Плюс ведёт на экран записи — оттуда выбирают услугу, врача или время.
+function startBookingFlow() {
 	startBooking('branch')
-	router.push('/branch')
+	router.push('/booking')
 }
 
-// На своём же экране кнопка остаётся на месте, но ссылкой не становится.
-const linkTo = (path) => (route.path === path ? undefined : path)
+// На своём же экране кнопка никуда не ведёт.
+const go = (path) => route.path !== path && router.push(path)
 
-// Текущий экран подсвечиваем: обводка и иконка брендовым цветом вместо
-// серой заливки. Отдаём набором пропсов, а не классом: у UiBtn цвет собирается
-// внутри, и дописанный сверху text-* конфликтовал бы с ним.
-const tabLook = (path) =>
-	route.path === path ? { outline: true } : { color: 'secondary', soft: true }
+// Текущий экран подсвечиваем брендовым цветом иконки — заливка у боковых
+// кнопок в макете всегда белая.
+const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
 </script>
 
 <template>
-	<!-- sticky, а не fixed: плашка остаётся в потоке, поэтому контент под ней
-	     не прячется и нижний отступ страницы не нужно подгонять руками.
-	     mt-auto прижимает её к низу, когда контента меньше экрана. -->
-	<div class="sticky bottom-7.5 z-10 mt-auto mb-7.5 px-2.5">
-		<div class="flex items-center justify-between p-4 rounded-full shadow-accent bg-card">
-			<UiBtn v-bind="tabLook('/profile')" :to="linkTo('/profile')" icon>
-				<House stroke-width="1.1" size="26" />
-			</UiBtn>
-			<UiBtn icon @click="startFromBranch"><Plus size="32" /></UiBtn>
-			<UiBtn v-bind="tabLook('/active')" :to="linkTo('/active')" icon>
-				<GalleryHorizontalEnd stroke-width="1.1" size="26" />
-			</UiBtn>
+	<!-- sticky, а не fixed: плашка остаётся в потоке, контент под ней не
+	     прячется. mt-auto прижимает её к низу, когда контента меньше экрана. -->
+	<div class="sticky bottom-2.5 z-10 mt-auto pt-2.5">
+		<div class="flex items-center justify-between px-5 py-2.5 rounded-card bg-card">
+			<button
+				type="button"
+				aria-label="Главная"
+				:class="iconColor('/profile')"
+				class="flex items-center justify-center w-14 h-14 rounded-full bg-page duration-60 active:scale-[0.94]"
+				@click="go('/profile')"
+			>
+				<House stroke-width="1.3" size="26" />
+			</button>
+
+			<button
+				type="button"
+				aria-label="Записаться"
+				class="flex items-center justify-center w-18 h-18 rounded-full bg-brand text-brand-foreground duration-60 active:scale-[0.94]"
+				@click="startBookingFlow"
+			>
+				<Plus stroke-width="2" size="34" />
+			</button>
+
+			<button
+				type="button"
+				aria-label="История посещений"
+				:class="iconColor('/active')"
+				class="flex items-center justify-center w-14 h-14 rounded-full bg-page duration-60 active:scale-[0.94]"
+				@click="go('/active')"
+			>
+				<GalleryHorizontalEnd stroke-width="1.3" size="26" />
+			</button>
 		</div>
 	</div>
 </template>

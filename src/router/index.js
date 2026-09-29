@@ -12,14 +12,29 @@ const routes = [
 		component: () => import('@/views/ViewProfile.vue'),
 	},
 	{
-		path: '/sale',
-		name: 'sale',
-		component: () => import('@/views/ViewSale.vue'),
-	},
-	{
 		path: '/active',
 		name: 'active',
 		component: () => import('@/views/ViewActive.vue'),
+	},
+	{
+		path: '/clinic',
+		name: 'clinic',
+		component: () => import('@/views/ViewClinic.vue'),
+	},
+	{
+		path: '/equipment',
+		name: 'equipment',
+		component: () => import('@/views/ViewEquipment.vue'),
+	},
+	{
+		path: '/equipment/:id',
+		name: 'equipment-item',
+		component: () => import('@/views/ViewEquipmentItem.vue'),
+	},
+	{
+		path: '/booking',
+		name: 'booking',
+		component: () => import('@/views/ViewBooking.vue'),
 	},
 	{
 		path: '/branch',
@@ -30,11 +45,6 @@ const routes = [
 		path: '/service',
 		name: 'service',
 		component: () => import('@/views/ViewService.vue'),
-	},
-	{
-		path: '/category',
-		name: 'category',
-		component: () => import('@/views/ViewCategory.vue'),
 	},
 	{
 		path: '/doctors',

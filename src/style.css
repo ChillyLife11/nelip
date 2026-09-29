@@ -3,19 +3,27 @@
 @theme {
 	--font-open-sans: 'Open Sans';
 
-	--color-brand: #01b27d;
+	/* Палитра снята с фреймов макета (design/), цвета точные. */
+	--color-brand: #0071be;
 	--color-brand-foreground: #ffffff;
 
-	--color-secondary: #e2e2e2;
-	--color-secondary-soft: #f5f6f0;
-	--color-secondary-foreground: #555559;
+	/* Серая кнопка «Отменить запись»: активная тёмная, неактивная светлая. */
+	--color-secondary: #9b9b9b;
+	--color-secondary-soft: #e1e1e1;
+	--color-secondary-foreground: #ffffff;
 
-	--color-page: #efefed;
-	--color-loading-page: #f0f0ee;
-	--color-card: #ffffff;
-	--color-card-darker: #f5f5f5;
+	/* Фон приложения белый, карточки серые — наоборот к medix. */
+	--color-page: #ffffff;
+	--color-loading-page: #f6fafc;
+	--color-card: #f5f5f5;
+	--color-card-darker: #ebebeb;
 
-	--color-gray: #555559;
+	--color-gray: #73746e;
+
+	/* Выбранный день в календаре. */
+	--color-day-selected: #eedde3;
+	/* Тонкая рамка карточки календаря. */
+	--color-hairline: #ddebf5;
 
 	--text-15: 15px;
 	--text-13: 13px;
@@ -27,6 +35,12 @@
 	color: var(--color-brand);
 	font-size: 22px;
 	margin-bottom: 30px;
+}
+
+/* Скругления в макете умеренные, а не пилюли: карточки 16px, кнопки 12px. */
+@theme {
+	--radius-card: 16px;
+	--radius-control: 12px;
 }
 
 @font-face {

@@ -1,58 +1,60 @@
 <script setup>
-import { computed, resolveComponent } from 'vue';
-
+import { computed, resolveComponent } from 'vue'
 
 const $props = defineProps({
-    to: [String, Object], // RouterLink to: '/path' | {}
-    disabled: Boolean,
-    loading: Boolean,
-    fluid: Boolean,
-    soft: Boolean,
-    icon: Boolean,
-    outline: Boolean,
-    color: {
-        default: 'brand',
-        validator(v) {
-            return ['brand', 'secondary', 'soft'].includes(v);
-        }
-    }
-});
+	to: [String, Object], // RouterLink to: '/path' | {}
+	disabled: Boolean,
+	loading: Boolean,
+	fluid: Boolean,
+	soft: Boolean,
+	icon: Boolean,
+	outline: Boolean,
+	// Круглая кнопка — только «плюс» в таббаре; всё остальное в макете со
+	// скруглением 12px, пилюль нет.
+	round: Boolean,
+	color: {
+		default: 'brand',
+		validator(v) {
+			return ['brand', 'secondary', 'soft'].includes(v)
+		},
+	},
+})
 
-const tag = computed(() => $props.to ? resolveComponent('RouterLink') : 'button');
+const tag = computed(() => ($props.to ? resolveComponent('RouterLink') : 'button'))
 
 const color = computed(() => {
-    if ($props.outline) {
-        return 'border border-brand text-brand';
-    }
-    switch ($props.color) {
-        case 'brand':
-            return 'bg-brand text-brand-foreground';
-        case 'secondary':
-            return $props.soft ? 'bg-secondary-soft text-gray' : 'bg-secondary' + ' text-secondary-foreground';
-    }
-});
-
+	if ($props.outline) {
+		return 'border border-brand text-brand'
+	}
+	switch ($props.color) {
+		case 'brand':
+			return 'bg-brand text-brand-foreground'
+		case 'secondary':
+			// soft — неактивное состояние: светлее и с серым текстом.
+			return $props.soft
+				? 'bg-secondary-soft text-gray'
+				: 'bg-secondary text-secondary-foreground'
+	}
+})
 </script>
 
 <template>
-    <component
+	<component
 		:is="tag"
-        :to="$props.to"
-        :disabled="$props.disabled"
-        :class="[
-            {
-                'w-full': $props.fluid,
-                'w-14 h-14': $props.icon,
-                'py-3.5 px-2.5': !$props.icon,
-            },
-            color
-        ]"
-        class="
-            inline-flex justify-center items-center rounded-full text-center duration-40
-            active:scale-[0.984]
-            disabled:opacity-60 disabled:pointer-events-none
-        "
-    >
-        <slot />
-    </component>
+		:to="$props.to"
+		:disabled="$props.disabled"
+		:class="[
+			{
+				'w-full': $props.fluid,
+				'w-14 h-14': $props.icon,
+				'py-3.5 px-2.5': !$props.icon,
+				'rounded-full': $props.round || $props.icon,
+				'rounded-control': !($props.round || $props.icon),
+			},
+			color,
+		]"
+		class="inline-flex justify-center items-center text-center duration-40 active:scale-[0.984] disabled:opacity-60 disabled:pointer-events-none"
+	>
+		<slot />
+	</component>
 </template>

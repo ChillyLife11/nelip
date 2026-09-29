@@ -1,9 +1,8 @@
 <script setup>
-import { ChevronLeft } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 
-// Заголовок экрана с кнопкой «назад» слева — общий для шагов записи.
-// По умолчанию шаг назад по истории; to — уйти на конкретный экран.
+// Заголовок экрана: слева название, справа «‹ Назад» — так во всех внутренних
+// экранах макета. По умолчанию шаг назад по истории; to — уйти на конкретный.
 const $props = defineProps({
 	to: [String, Object],
 })
@@ -14,15 +13,14 @@ const back = () => ($props.to ? router.push($props.to) : router.back())
 </script>
 
 <template>
-	<div class="flex items-center gap-1 mb-7">
+	<div class="flex items-end justify-between gap-2 mb-5">
+		<h1 class="text-[26px] leading-[1.1] text-brand"><slot /></h1>
 		<button
 			type="button"
-			aria-label="Назад"
-			class="shrink-0 -ml-1.5 text-brand duration-60 active:scale-[0.92]"
+			class="shrink-0 pb-1 text-[17px] text-gray duration-60 active:scale-[0.96]"
 			@click="back"
 		>
-			<ChevronLeft :size="28" stroke-width="1.5" />
+			‹ Назад
 		</button>
-		<h1 class="text-[22px] leading-[0.9] text-brand"><slot /></h1>
 	</div>
 </template>
