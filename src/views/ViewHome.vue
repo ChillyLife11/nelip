@@ -28,14 +28,21 @@ onMounted(async () => {
 </script>
 
 <template>
-	<div class="relative flex min-h-screen flex-col items-center justify-center px-2.5">
-		<img :src="`${base}images/logo.webp`" alt="" class="w-47 h-58 object-contain" />
-		<p class="max-w-96 text-center text-xl leading-[1.2] text-[#787878]">
-			СТОМАТОЛОГИЧЕСКАЯ КЛИНИКА ДОКТОРА ДАБАЕВА
+	<!-- Раскладка с макета (фрейм 393×852): логотип 315px сверху, под ним
+	     заголовок 50px с плотным межстрочным. Держим пропорции, а не пиксели:
+	     экраны бывают уже 393. -->
+	<div class="relative flex min-h-screen flex-col items-center justify-center gap-15 px-2.5">
+		<img
+			:src="`${base}images/logo-nelip.png`"
+			alt="Клиника доктора Нелип"
+			class="w-4/5 max-w-[315px] object-contain"
+		/>
+		<p class="max-w-[311px] text-center text-[50px] leading-[0.8] tracking-[-1.5px] text-brand">
+			Добро пожаловать
 		</p>
 
-		<!-- Крутилка внизу: экран висит минимум три секунды, без неё запуск
-		     выглядит зависшим. Логотип с надписью остаются по центру. -->
+		<!-- Крутилка внизу: экран висит минимум две секунды, без неё запуск
+		     выглядит зависшим. В макете её нет — оставлена сознательно. -->
 		<span
 			class="absolute bottom-20 block w-10 h-10 rounded-full border-4 border-brand/20 border-t-brand animate-spin"
 			role="status"
