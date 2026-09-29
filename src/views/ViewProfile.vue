@@ -1,0 +1,306 @@
+<script setup>
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import emblaCarouselVue from 'embla-carousel-vue'
+import UiBtn from '@/components/ui/UiBtn.vue'
+import UiLoader from '@/components/ui/UiLoader.vue'
+import FeedbackDialog from '@/components/feedback/FeedbackDialog.vue'
+import UiTabbar from '@/components/ui/UiTabbar.vue'
+import {
+	useAppointments,
+	serviceTitle,
+	doctorName,
+	longDateLabel,
+	timeRange,
+	branchAddress,
+} from '@/composables/useAppointments'
+import {
+	NotebookPen,
+	CalendarDays,
+	Clock,
+	User,
+	MapPin,
+	ChevronLeft,
+	ChevronRight,
+} from '@lucide/vue'
+import { useBooking } from '@/composables/useBooking'
+import { useAuth } from '@/composables/useAuth'
+import { useMessenger } from '@/composables/useMessenger'
+import { appUrl } from '@/config'
+
+const router = useRouter()
+const { startBooking } = useBooking()
+// Имя и аватар пациента — из аккаунта MAX, иначе из карточки клиента на бэкенде
+// (см. useAuth). Если фото нет нигде, показываем заглушку из public/images.
+const { clientName, clientPhoto } = useAuth()
+const defaultPhoto = `${import.meta.env.BASE_URL}images/doctor-img.png`
+
+// «Правовая информация» — документ, который лежит рядом со сборкой, в папке
+// компании. Открываем его так же, как документы в окне согласий: внутри MAX
+// PDF не отрисовывается, а скачивается, поэтому зовём openLink() и файл
+// показывает системный браузер.
+const { openLink } = useMessenger()
+const LEGAL_DOC = appUrl('policy.pdf')
+
+function openDocument(event, url) {
+	if (openLink(url)) event.preventDefault()
+}
+
+// Две точки входа в запись — с них и начинается порядок шагов.
+function startFromBranch() {
+	startBooking('branch')
+	router.push('/branch')
+}
+
+function startFromService() {
+	startBooking('service')
+	router.push('/service')
+}
+
+// Временно: смотрим, доезжает ли SDK MAX в реальном клиенте. В шаблоне `window`
+// недоступен (компилятор резолвит имена по инстансу и белому списку глобалов),
+// поэтому собираем строку здесь. Сам объект в интерполяции не показать — методы
+// при сериализации теряются, поэтому выводим то, что реально о нём говорит:
+// платформу, пользователя и какие из ожидаемых членов SDK на месте.
+const webAppProbe = (() => {
+	const app = window.WebApp
+	if (!app) return 'window.WebApp отсутствует'
+	const members = ['platform', 'initDataUnsafe', 'ready', 'requestContact']
+	return JSON.stringify(
+		{
+			platform: app.platform ?? null,
+			user: app.initDataUnsafe?.user ?? null,
+			has: members.filter((name) => app[name] !== undefined),
+		},
+		null,
+		2,
+	)
+})()
+
+// Актуальные записи в слайдере: по одной на слайд, листаются стрелками.
+// Берём current, а не весь список: прошедшие и отменённые живут в истории (/active).
+const { current, loading, failed, load, cancel, canceling } = useAppointments('current')
+// Картинки лежат в public/images — путь строим от базы сборки.
+const base = import.meta.env.BASE_URL
+
+const [emblaRef, emblaApi] = emblaCarouselVue({ loop: false, align: 'center' })
+
+const scrollPrev = () => emblaApi.value?.scrollPrev()
+const scrollNext = () => emblaApi.value?.scrollNext()
+
+// Без зацикливания на краях листать некуда — гасим соответствующую стрелку.
+const canScrollPrev = ref(false)
+const canScrollNext = ref(false)
+
+// Отменяем ту запись, которая сейчас на экране, — держим её индекс.
+const currentSlide = ref(0)
+
+function syncArrows() {
+	canScrollPrev.value = emblaApi.value?.canScrollPrev() ?? false
+	canScrollNext.value = emblaApi.value?.canScrollNext() ?? false
+	currentSlide.value = emblaApi.value?.selectedScrollSnap() ?? 0
+}
+
+const shownAppointment = computed(() => current.value[currentSlide.value] ?? null)
+
+async function cancelShown() {
+	if (!shownAppointment.value) return
+	if (await cancel(shownAppointment.value.id)) {
+		await nextTick()
+		emblaApi.value?.reInit()
+		syncArrows()
+	}
+}
+
+const hasAppointments = computed(() => !loading.value && !failed.value && current.value.length)
+
+// Слайдер держим в DOM всегда (прячем через v-show): embla инициализируется
+// один раз в onMounted и не подхватил бы контейнер, появившийся после запроса.
+// После загрузки пересчитываем размеры — слайды к этому моменту уже отрисованы.
+onMounted(async () => {
+	await load()
+	await nextTick()
+	emblaApi.value?.reInit()
+	emblaApi.value?.on('select', syncArrows).on('reInit', syncArrows)
+	syncArrows()
+})
+</script>
+
+<template>
+	<div class="flex flex-col space-y-5">
+		<div class="flex flex-col items-center py-5 px-2.5 space-y-4 rounded-b-4xl bg-card">
+			<div class="relative w-23.25 rounded-full">
+				<span class="block w-full pt-[100%]" />
+				<img
+					:src="clientPhoto || defaultPhoto"
+					alt="Пациент"
+					class="absolute inset-0 w-full h-full rounded-full object-cover object-center"
+				/>
+			</div>
+			<div class="text-2xl text-gray">{{ clientName }}</div>
+
+			<UiLoader v-if="loading" label="Загружаем записи" class="py-2" />
+
+			<div v-else-if="failed" class="text-13 text-center text-gray opacity-70">
+				Не удалось загрузить записи. Попробуйте позже.
+			</div>
+
+			<div v-else-if="!current.length" class="text-13 text-center text-gray opacity-70">
+				Активных записей нет - выберите услугу <br />и запишитесь на приём.
+			</div>
+
+			<div v-show="hasAppointments" class="flex items-center gap-1 w-full">
+				<button
+					type="button"
+					:disabled="!canScrollPrev"
+					class="shrink-0 p-2 -mx-1.5 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
+					aria-label="Предыдущая запись"
+					@click="scrollPrev"
+				>
+					<ChevronLeft :size="22" :stroke-width="1.5" />
+				</button>
+
+				<div ref="emblaRef" class="grow overflow-hidden">
+					<div class="flex">
+						<div
+							v-for="appointment in current"
+							:key="appointment.id"
+							class="shrink-0 basis-full min-w-0 space-y-2.5"
+						>
+							<div
+								class="flex items-center justify-center gap-2 h-11.75 px-4 rounded-full bg-card-darker"
+							>
+								<NotebookPen
+									:size="18"
+									:stroke-width="1.5"
+									class="shrink-0 text-brand"
+								/>
+								<span class="truncate text-gray">{{
+									serviceTitle(appointment)
+								}}</span>
+							</div>
+
+							<div class="flex gap-2 text-13 min-[400px]:text-15">
+								<div
+									class="grow min-w-0 flex items-center justify-center gap-1.5 h-11.75 px-2.5 rounded-full bg-card-darker"
+								>
+									<CalendarDays
+										:size="18"
+										:stroke-width="1.5"
+										class="shrink-0 text-brand"
+									/>
+									<span class="truncate text-gray">
+										{{ longDateLabel(appointment) }}
+									</span>
+								</div>
+								<div
+									class="shrink-0 flex items-center gap-1.5 h-11.75 px-2.5 rounded-full bg-card-darker"
+								>
+									<Clock
+										:size="18"
+										:stroke-width="1.5"
+										class="shrink-0 text-brand"
+									/>
+									<span class="text-gray whitespace-nowrap">
+										{{ timeRange(appointment) }}
+									</span>
+								</div>
+							</div>
+
+							<div
+								v-if="branchAddress(appointment)"
+								class="flex items-center justify-center gap-2 h-11.75 px-4 rounded-full bg-card-darker"
+							>
+								<MapPin
+									:size="18"
+									:stroke-width="1.5"
+									class="shrink-0 text-brand"
+								/>
+								<span class="truncate text-gray">
+									{{ branchAddress(appointment) }}
+								</span>
+							</div>
+
+							<div
+								class="flex items-center justify-center gap-2 h-11.75 px-4 rounded-full bg-card-darker"
+							>
+								<User :size="18" :stroke-width="1.5" class="shrink-0 text-brand" />
+								<span class="truncate text-gray">
+									{{ doctorName(appointment) || 'Врач не указан' }}
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<button
+					type="button"
+					:disabled="!canScrollNext"
+					class="shrink-0 p-2 -mx-1.5 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
+					aria-label="Следующая запись"
+					@click="scrollNext"
+				>
+					<ChevronRight :size="22" :stroke-width="1.5" />
+				</button>
+			</div>
+
+			<!-- Пока записи грузятся, кнопок нет: непонятно, появится ли под ними
+			     слайдер, и «Записаться» прыгает вместе с ним.
+			     С записями блок идёт сразу под слайдером — тень тут лишняя -->
+			<div
+				v-if="!loading"
+				:class="hasAppointments ? '' : 'shadow-accent'"
+				class="w-full p-3 space-y-2.5 rounded-full"
+			>
+				<!-- С актуальными записями «Записаться» убираем: человеку сейчас
+				     нужно прийти на уже назначенный приём, а не завести новый.
+				     Записаться всё равно можно плюсом в таббаре и плиткой «Услуги». -->
+				<UiBtn v-if="!hasAppointments" fluid @click="startFromBranch">Записаться</UiBtn>
+				<UiBtn
+					v-if="shownAppointment"
+					color="secondary"
+					:disabled="canceling"
+					fluid
+					@click="cancelShown"
+				>
+					{{ canceling ? 'Отменяем…' : 'Отменить запись' }}
+				</UiBtn>
+			</div>
+		</div>
+
+		<div class="px-2.5 space-y-2.5">
+			<RouterLink to="/sale" class="block p-5 rounded-full bg-card shadow-accent">
+				<div class="text-center text-xl text-brand">Акции</div>
+				<div class="mt-2.5 mx-auto text-15 text-center text-gray opacity-70">
+					Актуальные акции программы <br />стоматологической клиники
+				</div>
+			</RouterLink>
+			<!-- Второй сценарий записи: сначала услуга, филиал уже под неё -->
+			<button
+				type="button"
+				class="block w-full p-5 rounded-full bg-card shadow-accent duration-60 active:scale-[0.984]"
+				@click="startFromService"
+			>
+				<div class="text-center text-xl text-brand">Услуги</div>
+				<div class="mt-2.5 mx-auto text-15 text-center text-gray opacity-70">
+					Выберите интересующую услугу из списка <br />или запишитесь на консультацию
+				</div>
+			</button>
+		</div>
+
+		<div class="flex flex-col items-center px-2.5 space-y-2.5">
+			<a
+				:href="LEGAL_DOC"
+				target="_blank"
+				rel="noopener"
+				class="text-xl underline text-brand duration-60 active:scale-[0.96]"
+				@click="openDocument($event, LEGAL_DOC)"
+			>
+				Правовая информация
+			</a>
+			<FeedbackDialog />
+		</div>
+
+		<UiTabbar />
+	</div>
+</template>
