@@ -51,7 +51,7 @@ function submit() {
 
 <template>
 	<div class="min-h-screen flex flex-col p-2.5">
-		<UiPageTitle>Выбрать услугу</UiPageTitle>
+		<UiPageTitle>Выбрать направление</UiPageTitle>
 
 		<UiLoader v-if="loading" label="Загружаем услуги" />
 
@@ -69,7 +69,7 @@ function submit() {
 				v-for="service in services"
 				:key="service.id"
 				:value="service.id"
-				class="flex items-center w-full min-h-15 py-2 px-5 rounded-control bg-card text-left text-13 text-brand duration-60 active:scale-[0.98] data-[state=checked]:bg-card-darker"
+				class="flex items-center w-full min-h-10.75 py-3 px-[15px] rounded-control bg-card text-left text-15 leading-[1.1] text-brand duration-60 active:scale-[0.98] data-[state=checked]:bg-card-darker"
 			>
 				{{ service.title }}
 			</RadioGroupItem>
@@ -77,11 +77,11 @@ function submit() {
 
 		<UiBtn
 			:disabled="!selected"
-			class="sticky bottom-2 left-0 min-h-17.75 mt-auto mb-2 text-20 leading-[0.9] tracking-[-0.6px]"
+			class="sticky bottom-2 left-0 min-h-17.75 mt-auto mb-2 text-16 leading-[0.9] tracking-[-0.8px]"
 			fluid
 			@click="submit"
 		>
-			Выбрать услугу
+			Выбрать направление
 		</UiBtn>
 	</div>
 </template>

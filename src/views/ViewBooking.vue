@@ -110,7 +110,7 @@ const nextStep = computed(() => steps.value.find((step) => !step.value) ?? steps
 		</template>
 
 		<UiBtn
-			class="sticky bottom-2 left-0 z-10 min-h-17.75 mt-auto mb-2 text-20 leading-[0.9] tracking-[-0.6px]"
+			class="sticky bottom-2 left-0 z-10 min-h-17.75 mt-auto mb-2 text-16 leading-[0.9] tracking-[-0.8px]"
 			fluid
 			@click="router.push(nextStep.to)"
 		>

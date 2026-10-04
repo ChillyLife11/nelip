@@ -21,10 +21,10 @@ function back() {
 
 <template>
 	<div class="flex items-center justify-between gap-2 mb-5">
-		<h1 class="text-20 leading-[1] tracking-[-0.6px] font-bold text-brand"><slot /></h1>
+		<h1 class="text-22 leading-[0.9] text-brand"><slot /></h1>
 		<button
 			type="button"
-			class="shrink-0 text-13 text-gray duration-60 active:scale-[0.96]"
+			class="shrink-0 text-14 leading-[0.9] tracking-[-0.42px] text-[rgba(151,151,151,0.7)] duration-60 active:scale-[0.96]"
 			@click="back"
 		>
 			‹ Назад

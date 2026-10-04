@@ -142,7 +142,7 @@ onMounted(async () => {
 				<button
 					type="button"
 					:disabled="!canScrollPrev"
-					class="absolute left-0 z-10 flex items-center justify-center w-7.5 h-7.5 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
+					class="absolute left-0 z-10 flex items-center justify-center w-7.5 h-7.5 rounded-[3px] bg-card text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
 					aria-label="Предыдущая запись"
 					@click="scrollPrev"
 				>
@@ -160,7 +160,7 @@ onMounted(async () => {
 							<div
 								v-for="cell in appointmentCells(appointment)"
 								:key="cell.label"
-								class="flex flex-col items-center justify-center gap-1 min-h-18.75 py-2 px-7 rounded-control bg-page text-13 text-center text-gray"
+								class="flex flex-col items-center justify-center gap-1 min-h-18.75 py-2 px-7 rounded-control bg-page text-16 leading-[1] tracking-[-0.96px] text-center text-gray"
 							>
 								<component
 									:is="cell.icon"
@@ -177,7 +177,7 @@ onMounted(async () => {
 				<button
 					type="button"
 					:disabled="!canScrollNext"
-					class="absolute right-0 z-10 flex items-center justify-center w-7.5 h-7.5 text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
+					class="absolute right-0 z-10 flex items-center justify-center w-7.5 h-7.5 rounded-[3px] bg-card text-brand duration-60 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none"
 					aria-label="Следующая запись"
 					@click="scrollNext"
 				>
@@ -194,7 +194,7 @@ onMounted(async () => {
 			<div v-if="!loading" class="flex gap-[5px] pt-[5px]">
 				<UiBtn
 					v-if="!hasAppointments"
-					class="min-h-29.5 text-20 leading-[0.9] tracking-[-0.6px]"
+					class="min-h-29.5 text-16 leading-[0.9] tracking-[-0.48px]"
 					fluid
 					@click="startBookingFlow"
 				>
@@ -203,9 +203,8 @@ onMounted(async () => {
 				<UiBtn
 					v-if="shownAppointment"
 					color="secondary"
-					:soft="canceling"
 					:disabled="canceling"
-					class="min-h-24.5 text-20 leading-[0.9] tracking-[-0.6px]"
+					class="min-h-24.5 text-16 leading-[0.9] tracking-[-0.48px]"
 					fluid
 					@click="cancelShown"
 				>

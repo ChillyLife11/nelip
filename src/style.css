@@ -7,16 +7,18 @@
 	--color-brand: #0071be;
 	--color-brand-foreground: #ffffff;
 
-	/* Серая кнопка «Отменить запись»: активная тёмная, неактивная светлая. */
-	--color-secondary: #9b9b9b;
-	--color-secondary-soft: #e1e1e1;
-	--color-secondary-foreground: #ffffff;
+	/* Серая кнопка «Отменить запись»: светлая заливка с серым текстом. */
+	--color-secondary: #e1e1e1;
+	--color-secondary-soft: #ebebeb;
+	--color-secondary-foreground: #73746e;
 
 	/* Фон приложения белый, карточки серые — наоборот к medix. */
 	--color-page: #ffffff;
 	--color-loading-page: #f6fafc;
 	--color-card: #f5f5f5;
 	--color-card-darker: #ebebeb;
+	/* Таббар темнее карточек. */
+	--color-bar: #ebebeb;
 
 	--color-gray: #73746e;
 
@@ -29,7 +31,10 @@
 	--text-13: 13px;
 	/* Размеры из макета: 25px — имя пациента, 20px — кнопки, плитки и ссылки. */
 	--text-12: 12px;
+	--text-14: 14px;
+	--text-16: 16px;
 	--text-20: 20px;
+	--text-22: 22px;
 	--text-25: 25px;
 
 	/* Имя пациента чуть темнее основного серого. */
@@ -44,11 +49,11 @@
 	margin-bottom: 30px;
 }
 
-/* Скругления из макета: карточки 10px, кнопки и плитки 5px, таббар 20px. */
+/* Скругления из макета: везде 5px, у стрелок слайдера — 3px. */
 @theme {
-	--radius-card: 10px;
+	--radius-card: 5px;
 	--radius-control: 5px;
-	--radius-bar: 20px;
+	--radius-bar: 5px;
 }
 
 @font-face {
