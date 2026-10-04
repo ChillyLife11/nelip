@@ -1,5 +1,6 @@
 import { api } from '@/api/http'
-import { COMPANY_ID } from '@/config'
+import { COMPANY_ID, MOCK_DATA } from '@/config'
+import { mockBranches } from '@/api/mock'
 import { LEAD_MS } from '@/composables/useBooking'
 
 // Филиалы клиники. Требует авторизации (Bearer).
@@ -24,6 +25,12 @@ export function dropBranches() {
 }
 
 export function getBranches() {
+	// Тестовый режим: в сеть не ходим вовсе — у клиники на бэкенде нет ни услуг,
+	// ни расписания, и шаги записи упёрлись бы в пустые списки.
+	if (MOCK_DATA) {
+		if (!request) request = Promise.resolve((branches = mockBranches()))
+		return request
+	}
 	if (!request) {
 		request = api
 			.get('/branch/index', { params: { 'filter[company_id]': COMPANY_ID } })
