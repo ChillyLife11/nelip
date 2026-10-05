@@ -88,11 +88,11 @@ function submit() {
 
 		<UiLoader v-if="loading" label="Загружаем врачей" />
 
-		<div v-else-if="failed" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="failed" class="p-5 rounded-control bg-card text-13 text-gray">
 			Не удалось загрузить врачей. Попробуйте позже.
 		</div>
 
-		<div v-else-if="!doctors.length" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="!doctors.length" class="p-5 rounded-control bg-card text-13 text-gray">
 			По выбранной услуге врачей нет — попробуйте выбрать другую.
 		</div>
 

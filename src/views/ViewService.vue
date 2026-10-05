@@ -55,11 +55,11 @@ function submit() {
 
 		<UiLoader v-if="loading" label="Загружаем услуги" />
 
-		<div v-else-if="failed" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="failed" class="p-5 rounded-control bg-card text-13 text-gray">
 			Не удалось загрузить услуги. Попробуйте позже.
 		</div>
 
-		<div v-else-if="!services.length" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="!services.length" class="p-5 rounded-control bg-card text-13 text-gray">
 			<template v-if="serviceFirst">Услуги не найдены. Попробуйте позже.</template>
 			<template v-else>В этом филиале услуг нет — выберите другой филиал.</template>
 		</div>

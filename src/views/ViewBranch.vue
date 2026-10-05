@@ -64,11 +64,11 @@ function submit() {
 
 		<UiLoader v-if="loading" label="Загружаем филиалы" />
 
-		<div v-else-if="failed" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="failed" class="p-5 rounded-control bg-card text-13 text-gray">
 			Не удалось загрузить филиалы. Попробуйте позже.
 		</div>
 
-		<div v-else-if="!branches.length" class="p-5 rounded-4xl bg-card text-15 text-gray">
+		<div v-else-if="!branches.length" class="p-5 rounded-control bg-card text-13 text-gray">
 			<template v-if="serviceFirst">
 				Эту услугу пока не оказывают ни в одном филиале — выберите другую.
 			</template>
@@ -76,22 +76,21 @@ function submit() {
 		</div>
 
 		<template v-else>
-			<!-- Услуга есть только в одном филиале: показываем его одного, но
-			     карточкой во всю ширину — чтобы было видно, что именно выбрано. -->
+			<!-- Услуга есть только в одном филиале — говорим об этом, выбор всё
+			     равно за человеком. -->
 			<div v-if="serviceFirst && branches.length === 1" class="mb-2.5 text-13 text-gray">
 				Выбранная услуга доступна только в этом филиале
 			</div>
 
-			<RadioGroupRoot
-				v-model="selected"
-				:class="branches.length === 1 ? 'grid-cols-1' : 'grid-cols-2'"
-				class="grid gap-2.5 pb-5"
-			>
+			<!-- Своего фрейма у этого экрана в макете нет (филиал там не
+			     выбирается вовсе), поэтому плашки повторяют строки списка с
+			     «Выбрать направление»: 5px, брендовый текст, выбранная темнее. -->
+			<RadioGroupRoot v-model="selected" class="space-y-2.5 pb-2.5">
 				<RadioGroupItem
 					v-for="branch in branches"
 					:key="branch.id"
 					:value="branch.id"
-					class="flex items-center justify-center min-h-22.75 p-2.5 rounded-4xl border border-transparent bg-card text-center text-15 text-gray duration-60 active:scale-[0.96] data-[state=checked]:border-brand data-[state=checked]:bg-card-darker data-[state=checked]:shadow-accent"
+					class="flex items-center w-full min-h-10.75 py-3 px-[15px] rounded-control bg-card text-left text-15 leading-[1.1] text-brand duration-60 active:scale-[0.98] data-[state=checked]:bg-card-darker"
 				>
 					{{ shortAddress(branch) }}
 				</RadioGroupItem>
