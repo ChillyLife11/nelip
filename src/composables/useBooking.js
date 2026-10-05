@@ -1,6 +1,5 @@
-// Состояние флоу записи. Сценария два, различаются только первыми двумя шагами:
-//   'branch'  — филиал → услуга → врач → дата/время (кнопка «Записаться»)
-//   'service' — услуга → филиал → врач → дата/время (плитка «Услуги»)
+// Состояние флоу записи: услуга → врач → дата/время. Филиал как шаг убран —
+// клиника одна, и он подставляется сам на шаге услуги.
 // Экраны разнесены по роутам, поэтому выбор держим в одном модульном состоянии,
 // а не в каждой вьюхе отдельно.
 //
@@ -14,7 +13,6 @@ import { COMPANY_ID } from '@/config'
 import { clientId } from '@/session'
 import { dropBranches } from '@/api/branches'
 
-const flow = ref('branch')
 const branchId = ref(null)
 const serviceId = ref(null)
 const masterId = ref(null)
@@ -29,21 +27,14 @@ function reset() {
 	time.value = null
 }
 
-// Старт нового флоу с точки входа: сбрасываем прошлый выбор (иначе экраны
-// подставят филиал и услугу от предыдущей записи) и запоминаем порядок шагов —
-// по нему экраны решают, что грузить и куда вести дальше.
+// Старт новой записи с точки входа: сбрасываем прошлый выбор, иначе экраны
+// подставят услугу и врача от предыдущей.
 // Заодно забываем загруженные филиалы: справочник тянет за собой услуги, врачей
 // и расписание, а они за время сеанса могли измениться — каждая новая запись
 // начинается со свежих данных.
-function startBooking(kind) {
+function startBooking() {
 	reset()
 	dropBranches()
-	flow.value = kind
-}
-
-// Сценарий «сначала услуга»: филиал выбирается уже под выбранную услугу.
-function isServiceFirst() {
-	return flow.value === 'service'
 }
 
 // Повтор записи из истории: подставляем прошлый выбор целиком, чтобы человеку
@@ -51,7 +42,6 @@ function isServiceFirst() {
 function startRepeat({ branch = null, service = null, master = null } = {}) {
 	reset()
 	dropBranches()
-	flow.value = 'branch'
 	branchId.value = branch
 	serviceId.value = service
 	masterId.value = master
@@ -102,7 +92,6 @@ function isComplete() {
 
 export function useBooking() {
 	return {
-		flow,
 		branchId,
 		serviceId,
 		masterId,
@@ -110,7 +99,6 @@ export function useBooking() {
 		time,
 		startBooking,
 		startRepeat,
-		isServiceFirst,
 		reset,
 		appointmentPayload,
 		isComplete,

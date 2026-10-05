@@ -25,7 +25,7 @@ function repeat(appointment) {
 	const selection = repeatSelection(appointment)
 	startRepeat(selection)
 	const ready = selection.branch && selection.service && selection.master
-	router.push(ready ? '/datetime' : '/branch')
+	router.push(ready ? '/datetime' : '/service')
 }
 
 // История: только выполненные и отменённые записи. Актуальные (лист ожидания,

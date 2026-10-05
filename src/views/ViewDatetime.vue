@@ -211,7 +211,7 @@ const summary = computed(() => [
 			: '',
 		step: null,
 	},
-	{ label: 'Филиал', value: branch.value ? shortAddress(branch.value) : '', step: '/branch' },
+	{ label: 'Филиал', value: branch.value ? shortAddress(branch.value) : '', step: null },
 ])
 
 // Кнопка экрана больше не создаёт запись сразу: сначала показываем сводку, где

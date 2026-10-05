@@ -39,8 +39,8 @@ function openDocument(event, url) {
 // И главная, и плюс в таббаре начинают запись с первого шага: филиал → услуга
 // → врач → дата и время.
 function startBookingFlow() {
-	startBooking('branch')
-	router.push('/branch')
+	startBooking()
+	router.push('/service')
 }
 
 // Актуальные записи в слайдере: по одной на слайд, листаются стрелками.

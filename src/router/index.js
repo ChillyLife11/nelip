@@ -32,11 +32,6 @@ const routes = [
 		component: () => import('@/views/ViewEquipmentItem.vue'),
 	},
 	{
-		path: '/branch',
-		name: 'branch',
-		component: () => import('@/views/ViewBranch.vue'),
-	},
-	{
 		path: '/service',
 		name: 'service',
 		component: () => import('@/views/ViewService.vue'),

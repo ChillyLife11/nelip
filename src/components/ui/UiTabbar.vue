@@ -9,8 +9,8 @@ const { startBooking } = useBooking()
 
 // Плюс начинает запись с первого шага — выбора филиала.
 function startBookingFlow() {
-	startBooking('branch')
-	router.push('/branch')
+	startBooking()
+	router.push('/service')
 }
 
 // На своём же экране кнопка никуда не ведёт.

@@ -5,15 +5,16 @@ import { RadioGroupRoot, RadioGroupItem } from 'reka-ui'
 import UiBtn from '@/components/ui/UiBtn.vue'
 import UiPageTitle from '@/components/ui/UiPageTitle.vue'
 import UiLoader from '@/components/ui/UiLoader.vue'
-import { getAllServices, getBranch, loadedAllServices, loadedBranch } from '@/api/branches'
+import {
+	getAllServices,
+	getBranchesWithService,
+	loadedAllServices,
+	loadedBranchesWithService,
+} from '@/api/branches'
 import { useBooking } from '@/composables/useBooking'
 
 const router = useRouter()
-const { branchId, serviceId, isServiceFirst } = useBooking()
-
-// Сценарий «сначала услуга»: филиала ещё нет, показываем каталог всех услуг
-// клиники. В обычном сценарии услуги приходят вложенными в выбранный филиал.
-const serviceFirst = isServiceFirst()
+const { branchId, serviceId } = useBooking()
 
 function fill(list) {
 	services.value = list ?? []
@@ -26,14 +27,14 @@ const failed = ref(false)
 const selected = ref(null)
 
 // При возврате назад филиалы уже в кеше — берём сразу, без запроса и лоадера.
-const cached = serviceFirst ? loadedAllServices() : (loadedBranch(branchId.value)?.services ?? null)
+const cached = loadedAllServices()
 if (cached) fill(cached)
 const loading = ref(!cached)
 
 onMounted(async () => {
 	if (!loading.value) return
 	try {
-		fill(serviceFirst ? await getAllServices() : (await getBranch(branchId.value))?.services)
+		fill(await getAllServices())
 	} catch (e) {
 		console.warn('[service] branch/index failed', e)
 		failed.value = true
@@ -42,10 +43,18 @@ onMounted(async () => {
 	}
 })
 
-// Дальше в этом сценарии выбирают филиал — но уже только из тех, где услуга есть.
-function submit() {
+// Отдельного шага выбора филиала нет: клиника одна. Подставляем первый филиал,
+// где эта услуга есть, и идём к врачам. При входе через «Повторить» филиал уже
+// стоит из прошлой записи — его не трогаем.
+async function submit() {
 	serviceId.value = selected.value
-	router.push(serviceFirst ? '/branch' : '/doctors')
+	if (!branchId.value) {
+		const list =
+			loadedBranchesWithService(selected.value) ??
+			(await getBranchesWithService(selected.value))
+		branchId.value = list[0]?.id ?? null
+	}
+	router.push('/doctors')
 }
 </script>
 
@@ -60,8 +69,7 @@ function submit() {
 		</div>
 
 		<div v-else-if="!services.length" class="p-5 rounded-control bg-card text-13 text-gray">
-			<template v-if="serviceFirst">Услуги не найдены. Попробуйте позже.</template>
-			<template v-else>В этом филиале услуг нет — выберите другой филиал.</template>
+			Услуги не найдены. Попробуйте позже.
 		</div>
 
 		<RadioGroupRoot v-else v-model="selected" class="space-y-2.5 pb-2.5">
