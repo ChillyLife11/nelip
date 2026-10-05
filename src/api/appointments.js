@@ -1,6 +1,5 @@
 import { api } from '@/api/http'
-import { COMPANY_ID, MOCK_DATA } from '@/config'
-import { mockCancelAppointment, mockCreateAppointment, mockGetAppointments } from '@/api/mock'
+import { COMPANY_ID } from '@/config'
 
 // Статусы записи: 0 лист ожидания, 1 отправлен в МИС, 2 напоминание отправлено,
 // 4 подтверждено, 5 выполнено, 6 отменено.
@@ -21,10 +20,6 @@ export const ACTIVE_STATUSES = [0, 1, 2, 3, 4]
 export const HISTORY_STATUSES = [COMPLETE_STATUS, CANCELED_STATUS]
 
 export function getAppointments(clientId, statuses = null) {
-	// Тестовый режим: список берём из @/api/mock — там же лежат записи, созданные
-	// за этот сеанс.
-	if (MOCK_DATA) return mockGetAppointments(statuses)
-
 	const params = {
 		'filter[client_id]': clientId,
 		'filter[company_id]': COMPANY_ID,
@@ -70,15 +65,11 @@ export function statusKind(appointment) {
 // Отмена записи: id уходит query-параметром, в ответе — обновлённая запись
 // со статусом 6.
 export function cancelAppointment(id) {
-	if (MOCK_DATA) return mockCancelAppointment(id)
 	return api.post('/appointment/cancel', null, { params: { id } }).then((r) => r.data)
 }
 
 // Создание записи. Тело собирает useBooking (appointmentPayload).
 // Ответ: { id, date, start, end, timestamp, client, services, categories, branch }.
 export function createAppointment(payload) {
-	// Тестовый режим: на сервер ничего не уходит, запись остаётся в памяти
-	// страницы — после перехода на главную её видно в слайдере.
-	if (MOCK_DATA) return mockCreateAppointment(payload)
 	return api.post('/appointment/create', payload).then((r) => r.data)
 }
