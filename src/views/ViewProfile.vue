@@ -36,11 +36,11 @@ function openDocument(event, url) {
 	if (openLink(url)) event.preventDefault()
 }
 
-// Запись одна на всё приложение: клиника одна, филиал подставляется сам,
-// поэтому и главная, и плюс в таббаре ведут на экран-хаб.
+// И главная, и плюс в таббаре начинают запись с первого шага: филиал → услуга
+// → врач → дата и время.
 function startBookingFlow() {
 	startBooking('branch')
-	router.push('/booking')
+	router.push('/branch')
 }
 
 // Актуальные записи в слайдере: по одной на слайд, листаются стрелками.

@@ -7,10 +7,10 @@ const route = useRoute()
 const router = useRouter()
 const { startBooking } = useBooking()
 
-// Плюс ведёт на экран записи — оттуда выбирают услугу, врача или время.
+// Плюс начинает запись с первого шага — выбора филиала.
 function startBookingFlow() {
 	startBooking('branch')
-	router.push('/booking')
+	router.push('/branch')
 }
 
 // На своём же экране кнопка никуда не ведёт.
