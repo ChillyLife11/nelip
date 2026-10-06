@@ -5,6 +5,13 @@
 Формат — [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/),
 версионирование — [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-10-06
+
+### Changed
+
+- К отмене визита (`POST /appointment/cancel`) добавлен `company_id` — простым
+  query-параметром, рядом с `id`.
+
 ## [0.9.0] - 2026-10-06
 
 ### Changed

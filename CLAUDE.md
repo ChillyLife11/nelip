@@ -242,7 +242,7 @@ index.html                # подключает https://st.max.ru/js/max-web-ap
 >   `filter[status][]=5&filter[status][]=6` (форму подтвердил бэкендер 03.09.2026;
 >   операторы `[nin]`/`[in]` не работают). Деление списков на клиенте
 >   (`isCurrent`/`isHistorical`) остаётся в любом случае,
->   `POST /appointment/create`, `POST /appointment/cancel?id=`;
+>   `POST /appointment/create`, `POST /appointment/cancel?id=&company_id=`;
 > - `GET /user/check-chat-id?chat_id=&company_id=` — опознание клиента по id аккаунта MAX,
 >   без авторизации. На известном отдаёт клиента с `access_token`, на неизвестном
 >   — `null` (проверено вживую, отвечает 200 в обоих случаях);

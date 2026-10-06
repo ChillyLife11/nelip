@@ -63,9 +63,13 @@ export function statusKind(appointment) {
 }
 
 // Отмена записи: id уходит query-параметром, в ответе — обновлённая запись
-// со статусом 6.
+// со статусом 6. Рядом шлём company_id — как у методов `user/*`, простым
+// параметром, а не `filter[...]`: это действие над конкретной записью, а не
+// выборка списка.
 export function cancelAppointment(id) {
-	return api.post('/appointment/cancel', null, { params: { id } }).then((r) => r.data)
+	return api
+		.post('/appointment/cancel', null, { params: { id, company_id: COMPANY_ID } })
+		.then((r) => r.data)
 }
 
 // Создание записи. Тело собирает useBooking (appointmentPayload).
