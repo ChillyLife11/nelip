@@ -52,14 +52,23 @@ export function loadedBranch(id) {
 	return branches?.find((branch) => branch.id === id) ?? null
 }
 
-// Каталог услуг всей клиники. Отдельного эндпоинта под услуги нет — они
-// приходят вложенными в филиалы, поэтому склеиваем списки и убираем дубли.
-// Одна и та же услуга в разных филиалах приходит с одним id (на этом же
-// построена фильтрация врачей по услуге в ViewDoctors).
+// Услуги филиала. Отдельного эндпоинта под них нет, и приходят они **из двух
+// мест сразу**: в самом филиале (`branch.services`) и во врачах
+// (`coworker.services`). У Нелип `branch.services` приходит пустым, а все 95
+// услуг лежат во врачах — поэтому читаем оба источника, иначе каталог пуст.
+export function branchServices(branch) {
+	const list = [...(branch?.services ?? [])]
+	for (const coworker of branch?.coworkers ?? []) list.push(...(coworker.services ?? []))
+	return list
+}
+
+// Каталог услуг всей клиники: склейка по всем филиалам без дублей.
+// Одна и та же услуга приходит с одним id (на этом же построена фильтрация
+// врачей по услуге в ViewDoctors).
 function uniqueServices(list) {
 	const byId = new Map()
 	for (const branch of list ?? []) {
-		for (const service of branch.services ?? []) {
+		for (const service of branchServices(branch)) {
 			if (!byId.has(service.id)) byId.set(service.id, service)
 		}
 	}
@@ -79,7 +88,7 @@ export function loadedAllServices() {
 // только подходящие филиалы, а если он один — в списке останется он один.
 function withService(list, serviceId) {
 	return (list ?? []).filter((branch) =>
-		(branch.services ?? []).some((service) => service.id === serviceId),
+		branchServices(branch).some((service) => service.id === serviceId),
 	)
 }
 

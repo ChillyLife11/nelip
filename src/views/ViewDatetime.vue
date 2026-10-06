@@ -22,6 +22,7 @@ import UiLoader from '@/components/ui/UiLoader.vue'
 import BookingConfirm from '@/components/booking/BookingConfirm.vue'
 import { createAppointment } from '@/api/appointments'
 import {
+	branchServices,
 	getBranch,
 	loadedBranch,
 	nearestSlots,
@@ -180,7 +181,7 @@ watch(availableTimes, (list) => {
 const confirming = ref(false)
 
 const chosenService = computed(() =>
-	(branch.value?.services ?? []).find((service) => service.id === serviceId.value),
+	branchServices(branch.value).find((service) => service.id === serviceId.value),
 )
 const chosenDoctor = computed(() =>
 	(branch.value?.coworkers ?? []).find((coworker) => coworker.id === masterId.value),

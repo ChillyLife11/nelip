@@ -43,6 +43,14 @@ onMounted(async () => {
 	}
 })
 
+// Цена приходит отдельным полем строкой — «1000.00». В макете она стоит прямо
+// в строке услуги через дефис: «Маммография - 1800 руб.». Копеек у цен нет,
+// поэтому показываем целыми рублями.
+function priceLabel(service) {
+	const price = Number(service.price)
+	return Number.isFinite(price) && price > 0 ? ` - ${Math.round(price)} руб.` : ''
+}
+
 // Отдельного шага выбора филиала нет: клиника одна. Подставляем первый филиал,
 // где эта услуга есть, и идём к врачам. При входе через «Повторить» филиал уже
 // стоит из прошлой записи — его не трогаем.
@@ -79,7 +87,7 @@ async function submit() {
 				:value="service.id"
 				class="flex items-center w-full min-h-10.75 py-3 px-[15px] rounded-control bg-card text-left text-15 leading-[1.1] text-brand duration-60 active:scale-[0.98] data-[state=checked]:bg-card-darker"
 			>
-				{{ service.title }}
+				{{ service.title }}{{ priceLabel(service) }}
 			</RadioGroupItem>
 		</RadioGroupRoot>
 
