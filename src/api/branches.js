@@ -101,14 +101,34 @@ export function loadedBranchesWithService(serviceId) {
 	return branches ? withService(branches, serviceId) : null
 }
 
+// Позже этого часа не записываем, даже если бэкенд отдал слоты: расписание
+// приходит до 22:00, а приём заканчивается в 17:00. Ограничение общее для всего
+// приложения — и для сетки времени, и для ближайших слотов в карточке врача, и
+// для рабочих дней в календаре, потому что все три читают расписание через
+// timeList() ниже.
+const LAST_SLOT = '17:00'
+
+function minutesOf(time) {
+	const [hours, mins] = String(time).split(':').map(Number)
+	return Number.isFinite(hours) ? hours * 60 + (mins || 0) : null
+}
+
+const LAST_SLOT_MINUTES = minutesOf(LAST_SLOT)
+
 // Часы врача на дату. Бэкенд отдаёт их в двух видах: массивом ["09:00", …] и
 // объектом { "1": "11:00", "3": "13:00" } — это PHP отдаёт разреженный массив
 // (после занятых слотов индексы идут с пропусками) объектом, а не списком.
-// Приводим оба вида к массиву времён.
+// Приводим оба вида к массиву времён и отсекаем всё после LAST_SLOT.
 function timeList(slots) {
-	if (Array.isArray(slots)) return slots
-	if (slots && typeof slots === 'object') return Object.values(slots)
-	return []
+	const list = Array.isArray(slots)
+		? slots
+		: slots && typeof slots === 'object'
+			? Object.values(slots)
+			: []
+	return list.filter((time) => {
+		const minutes = minutesOf(time)
+		return minutes !== null && minutes <= LAST_SLOT_MINUTES
+	})
 }
 
 // Врачи филиала на дату: { "<id врача>": часы }. День без приёма приходит
