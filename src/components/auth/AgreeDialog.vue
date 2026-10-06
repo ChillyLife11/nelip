@@ -1,8 +1,11 @@
 <script setup>
 // Согласия на обработку ПДн и запрос номера — окно поверх сплэша.
+// Вид окна — как в medix (белая карточка, кнопка-пилюлей): решение заказчика,
+// в макете Нелип карточка серая, а кнопка со скруглением 5px. Квадратные
+// галочки, наоборот, из макета. Не «чинить» по одному из источников.
 // Отдельной страницы у согласий нет: пока клиент не опознан, под окном остаётся
 // экран загрузки, а закрыть окно нельзя — без номера дальше всё равно не пройти.
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle } from 'reka-ui'
 import { ExternalLink } from '@lucide/vue'
 import UiBtn from '@/components/ui/UiBtn.vue'
@@ -28,11 +31,12 @@ const PHONE_ERRORS = {
 const submitting = ref(false)
 const error = ref('')
 
-// Ознакомление с политикой обязательно — без него кнопка заблокирована,
-// поэтому отметка стоит по умолчанию (снять её человек может сам).
-// Рекламная рассылка добровольна, поэтому вход не держит.
+// Обе отметки обязательны: кнопка заблокирована, пока не стоят обе (решение
+// заказчика — в medix рассылка вход не держала). Политика отмечена по
+// умолчанию, рассылку человек ставит сам.
 const policy_read = ref(true)
 const marketing_agree = ref(false)
+const agreed = computed(() => policy_read.value && marketing_agree.value)
 
 // Документы клиники: политика и согласие на рассылку.
 const DOCS = {
@@ -53,7 +57,7 @@ function openDocument(event, url) {
 // Согласие на обработку ПДн даётся самим фактом продолжения (так написано в
 // заголовке), поэтому отдельной галочки под него нет.
 async function submit() {
-	if (submitting.value || !policy_read.value) return
+	if (submitting.value || !agreed.value) return
 	submitting.value = true
 	error.value = ''
 	try {
@@ -81,7 +85,7 @@ async function submit() {
 			     номера, приложению нечего показать под окном, кроме сплэша. -->
 			<DialogContent
 				aria-describedby="undefined"
-				class="fixed inset-0 z-50 m-auto flex h-fit max-h-[92vh] w-[calc(100%-2rem)] max-w-100 flex-col items-center overflow-y-auto p-5 rounded-4xl bg-card data-[state=open]:animate-[dialog-in_0.2s_ease] data-[state=closed]:animate-[dialog-out_0.15s_ease]"
+				class="fixed inset-0 z-50 m-auto flex h-fit max-h-[92vh] w-[calc(100%-2rem)] max-w-100 flex-col items-center overflow-y-auto p-5 rounded-4xl bg-white data-[state=open]:animate-[dialog-in_0.2s_ease] data-[state=closed]:animate-[dialog-out_0.15s_ease]"
 				@open-auto-focus.prevent
 				@escape-key-down.prevent
 				@pointer-down-outside.prevent
@@ -96,14 +100,14 @@ async function submit() {
 					<label class="flex items-start">
 						<input v-model="policy_read" type="checkbox" class="peer" hidden />
 						<span
-							class="shrink-0 block w-5 h-5 mr-2.5 rounded-full bg-[#EBEBEB] peer-checked:bg-brand"
+							class="shrink-0 block w-5 h-5 mr-2.5 rounded-control bg-secondary-soft peer-checked:bg-brand"
 						></span>
 						<span class="grow">Ознакомлен (-а) с политикой обработки ПД</span>
 					</label>
 					<label class="flex items-start">
 						<input v-model="marketing_agree" type="checkbox" class="peer" hidden />
 						<span
-							class="shrink-0 block w-5 h-5 mr-2.5 rounded-full bg-[#EBEBEB] peer-checked:bg-brand"
+							class="shrink-0 block w-5 h-5 mr-2.5 rounded-control bg-secondary-soft peer-checked:bg-brand"
 						></span>
 						<span class="grow">
 							Согласен (-а) на получение сообщение и информационно-рекламной рассылки
@@ -139,7 +143,7 @@ async function submit() {
 
 				<div v-if="error" class="mt-5 text-13 text-center text-gray">{{ error }}</div>
 
-				<UiBtn :disabled="submitting || !policy_read" class="w-43 mt-5" @click="submit">
+				<UiBtn :disabled="submitting || !agreed" round class="w-43 mt-5" @click="submit">
 					{{ submitting ? 'Проверяем…' : 'Продолжить' }}
 				</UiBtn>
 			</DialogContent>
