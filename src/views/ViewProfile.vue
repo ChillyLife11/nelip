@@ -67,12 +67,17 @@ function syncArrows() {
 
 const shownAppointment = computed(() => current.value[currentSlide.value] ?? null)
 
+// Отмену подтверждаем плашкой: запись просто исчезает из слайдера, и без
+// сообщения это читается как обновление страницы, а не как результат действия.
+const canceled = ref(false)
+
 async function cancelShown() {
 	if (!shownAppointment.value) return
 	if (await cancel(shownAppointment.value.id)) {
 		await nextTick()
 		emblaApi.value?.reInit()
 		syncArrows()
+		canceled.value = true
 	}
 }
 
@@ -240,5 +245,16 @@ onMounted(async () => {
 		</div>
 
 		<UiTabbar />
+
+		<div v-if="canceled" class="fixed inset-0 z-50 flex items-center justify-center p-5">
+			<div
+				role="status"
+				aria-live="polite"
+				class="w-full max-w-85 py-10 px-6 rounded-control border border-brand text-center bg-card"
+			>
+				<div class="text-lg text-gray">Запись отменена</div>
+				<UiBtn class="mt-6" @click="canceled = false">Хорошо!</UiBtn>
+			</div>
+		</div>
 	</div>
 </template>
