@@ -28,7 +28,14 @@ onMounted(async () => {
 </script>
 
 <template>
-	<div class="relative flex min-h-screen flex-col items-center justify-center gap-15 px-2.5">
+	<div
+		class="relative flex min-h-screen flex-col items-center justify-center gap-15 px-2.5 bg-loading-page"
+	>
+		<!-- Фон загрузки держим на корне экрана, а не на body: глобальный <style>
+		     красил body один раз и навсегда, и голубоватый фон оставался на всех
+		     остальных экранах — они белые. Комментарий обязан быть ВНУТРИ корня:
+		     перед ним шаблон становится фрагментом и <Transition> в App.vue
+		     перестаёт работать (экран после сплэша остаётся пустым). -->
 		<!-- Раскладка с макета (фрейм 393×852): логотип 315px сверху, под ним
 		     заголовок 50px с плотным межстрочным. Держим пропорции, а не пиксели:
 		     экраны бывают уже 393. -->
@@ -52,9 +59,3 @@ onMounted(async () => {
 		<AgreeDialog v-model:open="agreeing" @signed="router.replace('/profile')" />
 	</div>
 </template>
-
-<style>
-body {
-	background-color: var(--color-loading-page);
-}
-</style>
