@@ -85,7 +85,7 @@ async function submit() {
 				v-for="service in services"
 				:key="service.id"
 				:value="service.id"
-				class="flex items-center w-full min-h-10.75 py-3 px-[15px] rounded-control bg-card text-left text-15 leading-[1.1] text-brand duration-60 active:scale-[0.98] data-[state=checked]:bg-card-darker"
+				class="flex items-center w-full min-h-10.75 py-3 px-[15px] rounded-control border border-transparent bg-card text-left text-15 leading-[1.1] text-brand duration-60 active:scale-[0.98] data-[state=checked]:border-brand data-[state=checked]:bg-card-darker"
 			>
 				{{ service.title }}{{ priceLabel(service) }}
 			</RadioGroupItem>

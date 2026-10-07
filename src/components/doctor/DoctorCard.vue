@@ -18,8 +18,8 @@ defineProps({
 <template>
 	<button
 		type="button"
-		:class="selected ? 'bg-card-darker' : 'bg-card'"
-		class="relative isolate w-full min-h-39 overflow-hidden rounded-control text-left duration-60 active:scale-[0.99]"
+		:class="selected ? 'border-brand bg-card-darker' : 'border-transparent bg-card'"
+		class="relative isolate w-full min-h-39 overflow-hidden rounded-control border text-left duration-60 active:scale-[0.99]"
 	>
 		<!-- Размеры с фрейма 60:1280: карточка 373×157, текст 13/12px, плашки
 		     времени 73×28, фото прижато вправо во всю высоту.
