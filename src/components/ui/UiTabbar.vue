@@ -16,9 +16,11 @@ function startBookingFlow() {
 // На своём же экране кнопка никуда не ведёт.
 const go = (path) => route.path !== path && router.push(path)
 
-// Текущий экран подсвечиваем брендовым цветом иконки — заливка у боковых
-// кнопок в макете всегда белая.
-const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
+// Текущий экран подсвечиваем брендовым цветом иконки и рамкой того же цвета —
+// заливка у боковых кнопок в макете всегда белая. Прозрачная рамка стоит и в
+// неактивном состоянии, иначе кнопка дёргалась бы на 2px при переходе.
+const tabClass = (path) =>
+	route.path === path ? 'border-brand text-brand' : 'border-transparent text-gray'
 </script>
 
 <template>
@@ -29,8 +31,8 @@ const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
 			<button
 				type="button"
 				aria-label="Главная"
-				:class="iconColor('/profile')"
-				class="flex items-center justify-center w-14 h-14 rounded-full bg-page duration-60 active:scale-[0.94]"
+				:class="tabClass('/profile')"
+				class="flex items-center justify-center w-14 h-14 rounded-full border bg-page duration-60 active:scale-[0.94]"
 				@click="go('/profile')"
 			>
 				<House stroke-width="1.3" size="27" />
@@ -48,8 +50,8 @@ const iconColor = (path) => (route.path === path ? 'text-brand' : 'text-gray')
 			<button
 				type="button"
 				aria-label="История посещений"
-				:class="iconColor('/active')"
-				class="flex items-center justify-center w-14 h-14 rounded-full bg-page duration-60 active:scale-[0.94]"
+				:class="tabClass('/active')"
+				class="flex items-center justify-center w-14 h-14 rounded-full border bg-page duration-60 active:scale-[0.94]"
 				@click="go('/active')"
 			>
 				<GalleryHorizontalEnd stroke-width="1.3" size="27" />
