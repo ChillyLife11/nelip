@@ -422,7 +422,7 @@ async function submit() {
 			<div
 				role="status"
 				aria-live="polite"
-				class="w-full max-w-85 py-10 px-6 rounded-control text-center bg-card"
+				class="w-full max-w-85 py-10 px-6 rounded-control border border-brand text-center bg-card"
 			>
 				<div class="text-lg text-gray">Ваша запись успешно оформлена!</div>
 				<UiBtn class="mt-6" to="/profile">Перейти в профиль</UiBtn>
