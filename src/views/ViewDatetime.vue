@@ -401,7 +401,7 @@ async function submit() {
 
 		<UiBtn
 			:disabled="!selectedTime"
-			class="sticky bottom-5 left-0 min-h-17.75 mt-auto mb-2.5 text-16 leading-[0.9] tracking-[-0.8px]"
+			class="sticky bottom-7 left-0 min-h-17.75 mt-auto mb-4.5 text-16 leading-[0.9] tracking-[-0.8px]"
 			fluid
 			@click="review"
 		>
