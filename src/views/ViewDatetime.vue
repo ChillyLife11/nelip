@@ -15,6 +15,11 @@ import {
 	CalendarHeadCell,
 	CalendarCell,
 	CalendarCellTrigger,
+	DialogRoot,
+	DialogPortal,
+	DialogOverlay,
+	DialogContent,
+	DialogTitle,
 } from 'reka-ui'
 import UiBtn from '@/components/ui/UiBtn.vue'
 import UiPageTitle from '@/components/ui/UiPageTitle.vue'
@@ -242,8 +247,11 @@ function cancel() {
 const saving = ref(false)
 const saveError = ref('')
 
-// Успех подтверждаем плашкой поверх экрана: мгновенный переход не читался —
-// человек не понимал, оформилась запись или нет. Уходим на главную по кнопке.
+// Успех подтверждаем окном поверх экрана: мгновенный переход не читался —
+// человек не понимал, оформилась запись или нет. Уйти с экрана можно только
+// кнопкой в окне: закрыть его нечем (ни Esc, ни клик мимо), а фон под ним
+// заблокирован — иначе человек оставался на шаге записи с уже созданной
+// записью и мог оформить вторую.
 const success = ref(false)
 
 // Финал флоу: фиксируем выбор и создаём запись. При успехе состояние сбрасываем,
@@ -418,15 +426,28 @@ async function submit() {
 			@edit="edit"
 		/>
 
-		<div v-if="success" class="fixed inset-0 z-50 flex items-center justify-center p-5">
-			<div
-				role="status"
-				aria-live="polite"
-				class="w-full max-w-85 py-10 px-6 rounded-control border border-brand text-center bg-card"
-			>
-				<div class="text-lg text-gray">Ваша запись успешно оформлена!</div>
-				<UiBtn class="mt-6" to="/profile">Перейти в профиль</UiBtn>
-			</div>
-		</div>
+		<DialogRoot :open="success">
+			<DialogPortal>
+				<DialogOverlay
+					class="fixed inset-0 z-40 bg-black/40 data-[state=open]:animate-[overlay-in_0.2s_ease]"
+				/>
+				<!-- Закрыть нельзя: ни крестика, ни Esc, ни клика мимо. Выход один —
+				     кнопка на главную. -->
+				<DialogContent
+					aria-describedby="undefined"
+					class="fixed inset-0 z-50 m-auto h-fit w-[calc(100%-2.5rem)] max-w-85 py-10 px-6 rounded-control border border-brand text-center bg-card data-[state=open]:animate-[dialog-in_0.2s_ease]"
+					@open-auto-focus.prevent
+					@escape-key-down.prevent
+					@pointer-down-outside.prevent
+					@focus-outside.prevent
+					@interact-outside.prevent
+				>
+					<DialogTitle class="text-lg font-normal text-gray">
+						Ваша запись успешно оформлена!
+					</DialogTitle>
+					<UiBtn class="mt-6" to="/profile">Перейти в профиль</UiBtn>
+				</DialogContent>
+			</DialogPortal>
+		</DialogRoot>
 	</div>
 </template>
