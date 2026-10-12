@@ -19,9 +19,9 @@ export const FALLBACK_PHONE = import.meta.env.DEV ? TEST_PHONE : null
 // внутри MAX нет консоли, иначе обмен не увидеть. Код живёт в
 // @/composables/useHttpLog, @/components/debug/HttpToasts и паре перехватчиков
 // в @/api/http.
-// ⚠️ СЕЙЧАС ВКЛЮЧЕНЫ — тосты видны живым пользователям. Перед релизом вернуть
-// false (или удалить @/components/debug вместе с useHttpLog).
-export const DEBUG_HTTP = true
+// Сейчас выключены; код цел, достаточно вернуть true. Перед релизом можно
+// удалить совсем — @/components/debug вместе с useHttpLog.
+export const DEBUG_HTTP = false
 
 // Картинки приходят путями вида /uploads/... — их нужно префиксовать хостом бэка
 // (прокси в dev настроен только на /api).
