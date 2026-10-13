@@ -5,7 +5,13 @@ import UiBtn from '@/components/ui/UiBtn.vue'
 import UiPageTitle from '@/components/ui/UiPageTitle.vue'
 import UiLoader from '@/components/ui/UiLoader.vue'
 import DoctorCard from '@/components/doctor/DoctorCard.vue'
-import { getBranch, loadedBranch, nearestSlots } from '@/api/branches'
+import {
+	branchServices,
+	getBranch,
+	loadedBranch,
+	nearestSlots,
+	serviceMinutes,
+} from '@/api/branches'
 import { fileUrl } from '@/config'
 import { useBooking } from '@/composables/useBooking'
 
@@ -45,12 +51,18 @@ function fill(loaded) {
 
 // Ближайший свободный день врача и первые три часа в нём — расписание приходит
 // в филиале, отдельного запроса не нужно.
+// Длительность выбранной услуги: от неё зависит, какие старты вообще
+// возможны — слоты приходят по 10 минут, а приём занимает 20-40.
+const duration = computed(() =>
+	serviceMinutes(branchServices(branch.value).find((s) => s.id === serviceId.value)),
+)
+
 const dateFormatter = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'long' })
 
 const slotsOf = computed(() => {
 	const byDoctor = new Map()
 	for (const doctor of doctors.value) {
-		const nearest = nearestSlots(branch.value, doctor.id)
+		const nearest = nearestSlots(branch.value, doctor.id, 3, duration.value)
 		byDoctor.set(doctor.id, {
 			date: nearest ? dateFormatter.format(new Date(`${nearest.date}T00:00`)) : '',
 			times: nearest?.times ?? [],

@@ -11,7 +11,7 @@
 import { ref } from 'vue'
 import { COMPANY_ID } from '@/config'
 import { clientId } from '@/session'
-import { dropBranches } from '@/api/branches'
+import { branchServices, dropBranches, loadedBranch, serviceMinutes } from '@/api/branches'
 
 const branchId = ref(null)
 const serviceId = ref(null)
@@ -51,9 +51,13 @@ function startRepeat({ branch = null, service = null, master = null } = {}) {
 // для сетки времени на /datetime, и для ближайших слотов в карточке врача.
 export const LEAD_MS = 60 * 60 * 1000
 
-// Длительность приёма: бэкенд ждёт конец интервала (end). Сетка времени на
-// экране часовая, но окно записи — 30 минут, как в примере запроса из API.
-const APPOINTMENT_MINUTES = 30
+// Длительность приёма берём из услуги: бэкенд ждёт конец интервала (end), а
+// услуги теперь приходят со своей длительностью (20-40 минут). Если её нет,
+// serviceMinutes вернёт прежние 30 минут.
+function appointmentMinutes() {
+	const branch = loadedBranch(branchId.value)
+	return serviceMinutes(branchServices(branch).find((s) => s.id === serviceId.value))
+}
 
 function addMinutes(startTime, minutes) {
 	const [hours, mins] = startTime.split(':').map(Number)
@@ -71,7 +75,7 @@ function appointmentPayload() {
 		master_id: masterId.value,
 		date: date.value,
 		start: time.value,
-		end: addMinutes(time.value, APPOINTMENT_MINUTES),
+		end: addMinutes(time.value, appointmentMinutes()),
 		status: 0,
 		services: serviceId.value ? [serviceId.value] : [],
 		source: 'max',

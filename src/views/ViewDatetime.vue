@@ -33,6 +33,7 @@ import {
 	nearestSlots,
 	scheduleDates,
 	scheduleSlots,
+	serviceMinutes,
 	shortAddress,
 } from '@/api/branches'
 import { apiErrorMessage } from '@/api/http'
@@ -116,12 +117,25 @@ const selectedTime = ref(null)
 const hourOf = (t) => Number(t.split(':')[0])
 const minuteOf = (t) => Number(t.split(':')[1])
 
+// Услуга нужна раньше сетки времени: от её длительности зависит, какие слоты
+// вообще можно показать (см. fitSlots в @/api/branches).
+const chosenService = computed(() =>
+	branchServices(branch.value).find((service) => service.id === serviceId.value),
+)
+
+const serviceDuration = computed(() => serviceMinutes(chosenService.value))
+
 // Часы приёма приходят из расписания филиала — те же, что показаны в карточке
 // врача. Сетка зависит от врача и дня: у одного день с 9 до 17, у другого только
 // 15:30 и 16:30. Занят ли конкретный час, всё равно проверит бэкенд при создании.
 const hours = computed(() =>
 	selectedDate.value
-		? scheduleSlots(branch.value, masterId.value, selectedDate.value.toString())
+		? scheduleSlots(
+				branch.value,
+				masterId.value,
+				selectedDate.value.toString(),
+				serviceDuration.value,
+			)
 		: [],
 )
 
@@ -185,9 +199,6 @@ watch(availableTimes, (list) => {
 // всё берём из уже загруженного филиала, дополнительных запросов не нужно.
 const confirming = ref(false)
 
-const chosenService = computed(() =>
-	branchServices(branch.value).find((service) => service.id === serviceId.value),
-)
 const chosenDoctor = computed(() =>
 	(branch.value?.coworkers ?? []).find((coworker) => coworker.id === masterId.value),
 )

@@ -169,28 +169,98 @@ export function shortAddress(branch) {
 	return [named, ...rest].join(', ')
 }
 
+// Длительность услуги в минутах. Бэкенд завёл её недавно, и имя поля пока не
+// подтверждено — принимаем несколько вариантов и оба формата: число минут
+// (20, "30") и «HH:MM:SS» («00:20:00»). Если длительности нет, считаем приём
+// получасовым, как было до её появления.
+export const DEFAULT_MINUTES = 30
+
+export function serviceMinutes(service) {
+	const raw =
+		service?.duration ??
+		service?.duration_minutes ??
+		service?.minutes ??
+		service?.length ??
+		service?.time
+	if (raw === null || raw === undefined || raw === '') return DEFAULT_MINUTES
+	if (typeof raw === 'string' && raw.includes(':')) {
+		const [hours, mins] = raw.split(':').map(Number)
+		const total = (hours || 0) * 60 + (mins || 0)
+		return total > 0 ? total : DEFAULT_MINUTES
+	}
+	const total = Number(raw)
+	return Number.isFinite(total) && total > 0 ? total : DEFAULT_MINUTES
+}
+
+const minutesOfTime = (time) => {
+	const [hours, mins] = String(time).split(':').map(Number)
+	return Number.isFinite(hours) ? hours * 60 + (mins || 0) : null
+}
+
+// Шаг сетки берём из самих данных: бэкенд отдаёт слоты по 10 минут, но раньше
+// были часовые, и жёсткое число сломалось бы при следующей смене.
+function stepOf(minutes) {
+	let step = Infinity
+	for (let i = 1; i < minutes.length; i += 1) {
+		const diff = minutes[i] - minutes[i - 1]
+		if (diff > 0 && diff < step) step = diff
+	}
+	return Number.isFinite(step) ? step : 10
+}
+
+// Старты, на которые приём нужной длительности влезает целиком и не наезжает на
+// соседний. Слоты приходят по 10 минут, а приём занимает 20-40 — значит часть
+// стартов показывать нельзя: при длительности 20 минут из
+// [10:00, 10:10, 10:20, 10:30, 10:40] остаются только 10:00 и 10:20
+// (10:40 отпадает — под него нужен ещё свободный 10:50).
+export function fitSlots(times, minutes = DEFAULT_MINUTES) {
+	const list = [...new Set(times.map(minutesOfTime).filter((m) => m !== null))].sort(
+		(a, b) => a - b,
+	)
+	if (!list.length) return []
+	const step = stepOf(list)
+	const free = new Set(list)
+	const need = Math.max(1, Math.ceil(minutes / step))
+
+	const fits = (start) => {
+		for (let i = 0; i < need; i += 1) if (!free.has(start + i * step)) return false
+		return true
+	}
+
+	const pad = (n) => String(n).padStart(2, '0')
+	const out = []
+	let busyUntil = -Infinity
+	for (const start of list) {
+		if (start < busyUntil || !fits(start)) continue
+		out.push(`${pad(Math.floor(start / 60))}:${pad(start % 60)}`)
+		busyUntil = start + need * step
+	}
+	return out
+}
+
 // Часы врача на конкретный день — сетка времени на последнем шаге записи.
 // masterId === null: объединяем часы всех врачей филиала (тот же режим, что и
 // у scheduleDates), иначе берём только выбранного.
-export function scheduleSlots(branch, masterId, date) {
+export function scheduleSlots(branch, masterId, date, minutes = DEFAULT_MINUTES) {
 	const byMaster = bySchedule(branch, date)
-	if (masterId !== null && masterId !== undefined) return [...timeList(byMaster[masterId])].sort()
+	if (masterId !== null && masterId !== undefined)
+		return fitSlots(timeList(byMaster[masterId]), minutes)
 	const all = new Set()
 	for (const slots of Object.values(byMaster)) for (const time of timeList(slots)) all.add(time)
-	return [...all].sort()
+	return fitSlots([...all], minutes)
 }
 
 // Ближайшие свободные часы врача — для карточки на экране выбора врача.
 // Идём по датам расписания с начала и берём первый день, где ещё осталось
 // время: прошедшие часы и ближайший час от «сейчас» не в счёт, как и на
 // экране выбора времени.
-export function nearestSlots(branch, masterId, count = 3) {
+export function nearestSlots(branch, masterId, count = 3, minutes = DEFAULT_MINUTES) {
 	const schedule = branch?.schedule ?? {}
 	const now = Date.now()
 	for (const date of Object.keys(schedule).sort()) {
-		const times = timeList(bySchedule(branch, date)[masterId])
-			.filter((time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS)
-			.sort()
+		const times = fitSlots(timeList(bySchedule(branch, date)[masterId]), minutes).filter(
+			(time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS,
+		)
 		if (times.length) return { date, times: times.slice(0, count) }
 	}
 	return null
