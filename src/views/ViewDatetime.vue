@@ -105,9 +105,11 @@ const monthFormatter = new Intl.DateTimeFormat('ru', { month: 'long' })
 const monthLabel = (dateValue) =>
 	monthFormatter.format(new Date(dateValue.year, dateValue.month - 1, 1))
 
-// Периоды делят часовую сетку пополам — утро и вторая половина дня.
+// Периоды делят рабочий день пополам — утро и вторая половина. Подписи должны
+// совпадать с рабочим днём из @/api/branches (DAY_START и DAY_END), а границы
+// from/to нарочно шире: за ними слотов всё равно нет, их отсекает timeList().
 const periods = [
-	{ label: '9:00 - 13:00', from: 0, to: 13 },
+	{ label: '10:00 - 13:00', from: 0, to: 13 },
 	{ label: '13:00 - 18:00', from: 13, to: 24 },
 ]
 const selectedPeriod = ref(periods[0].label)
@@ -126,7 +128,7 @@ const chosenService = computed(() =>
 const serviceDuration = computed(() => serviceMinutes(chosenService.value))
 
 // Часы приёма приходят из расписания филиала — те же, что показаны в карточке
-// врача. Сетка зависит от врача и дня: у одного день с 9 до 17, у другого только
+// врача. Сетка зависит от врача и дня: у одного день с 10 до 18, у другого только
 // 15:30 и 16:30. Занят ли конкретный час, всё равно проверит бэкенд при создании.
 const hours = computed(() =>
 	selectedDate.value
