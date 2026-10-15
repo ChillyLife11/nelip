@@ -9,8 +9,9 @@ import UiBtn from '@/components/ui/UiBtn.vue'
 const open = defineModel('open', { type: Boolean, default: false })
 
 defineProps({
-	// [{ label, value, step }] — step это роут шага, куда ведёт иконка.
+	// [{ label, value, step, fixed }] — step это роут шага, куда ведёт иконка.
 	// Для шага, на котором мы уже стоим (дата и время), step не нужен.
+	// fixed — строка, которую не поменять: иконки у неё нет.
 	rows: {
 		type: Array,
 		default: () => [],
@@ -54,6 +55,7 @@ const emit = defineEmits(['confirm', 'cancel', 'edit'])
 						<dd class="flex items-center gap-2 text-15 text-gray">
 							<span>{{ row.value || '—' }}</span>
 							<button
+								v-if="!row.fixed"
 								type="button"
 								class="shrink-0 text-gray duration-60 active:scale-[0.92]"
 								:aria-label="`Изменить: ${row.label}`"

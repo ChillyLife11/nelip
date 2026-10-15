@@ -219,7 +219,8 @@ const dateFormatter = new Intl.DateTimeFormat('ru', {
 })
 
 // Строки сводки. step — роут шага, куда ведёт иконка; у даты и времени его нет,
-// этот шаг открыт прямо под окном.
+// этот шаг открыт прямо под окном. fixed — строка без иконки вовсе: филиал у
+// клиники один, шага выбора под ним нет, и менять там нечего.
 const summary = computed(() => [
 	{ label: 'Услуга', value: chosenService.value?.title ?? '', step: '/service' },
 	{ label: 'Врач', value: doctorName.value, step: '/doctors' },
@@ -230,7 +231,7 @@ const summary = computed(() => [
 			: '',
 		step: null,
 	},
-	{ label: 'Филиал', value: branch.value ? shortAddress(branch.value) : '', step: null },
+	{ label: 'Филиал', value: branch.value ? shortAddress(branch.value) : '', fixed: true },
 ])
 
 // Кнопка экрана больше не создаёт запись сразу: сначала показываем сводку, где
