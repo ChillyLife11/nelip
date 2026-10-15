@@ -137,6 +137,22 @@ function timeList(slots) {
 	})
 }
 
+// Воскресенье и понедельник в клинике не принимают. Бэкенд эти дни в расписании
+// всё равно присылает, поэтому закрываем их у себя — ровно там же, где живут
+// границы рабочего дня, чтобы правила приёма лежали в одном месте. Проверка
+// стоит в трёх точках, через которые читается расписание: в днях календаря
+// (scheduleDates), в сетке времени (scheduleSlots) и в ближайших слотах
+// (nearestSlots).
+const WEEKEND_WEEKDAYS = new Set([0, 1])
+
+// Дату разбираем вручную: new Date('2026-10-18') — это UTC-полночь, и в часовом
+// поясе клиники (+8) getDay() отдал бы предыдущий день.
+function isWorkday(date) {
+	const [year, month, day] = String(date).split('-').map(Number)
+	if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return true
+	return !WEEKEND_WEEKDAYS.has(new Date(year, month - 1, day).getDay())
+}
+
 // Врачи филиала на дату: { "<id врача>": часы }. День без приёма приходит
 // пустым массивом вместо объекта — по той же причине, что и часы выше.
 function bySchedule(branch, date) {
@@ -145,12 +161,14 @@ function bySchedule(branch, date) {
 }
 
 // Расписание филиала: { "YYYY-MM-DD": { "<id врача>": ["09:00", …] } }.
-// Бэкенд отдаёт только ближайшие дни (около недели) и только рабочие — значит
-// дни, которых в расписании нет, для записи закрыты.
+// Бэкенд отдаёт только ближайшие дни (около недели) — значит дни, которых в
+// расписании нет, для записи закрыты. Выходные клиники он при этом присылает,
+// их отсекает isWorkday().
 // Врача учитываем: в один и тот же день в филиале принимают не все.
 export function scheduleDates(branch, masterId = null) {
 	const schedule = branch?.schedule ?? {}
 	const open = Object.keys(schedule).filter((date) => {
+		if (!isWorkday(date)) return false
 		const byMaster = bySchedule(branch, date)
 		return masterId === null
 			? Object.values(byMaster).some((slots) => timeList(slots).length)
@@ -248,6 +266,7 @@ export function fitSlots(times, minutes = DEFAULT_MINUTES) {
 // masterId === null: объединяем часы всех врачей филиала (тот же режим, что и
 // у scheduleDates), иначе берём только выбранного.
 export function scheduleSlots(branch, masterId, date, minutes = DEFAULT_MINUTES) {
+	if (!isWorkday(date)) return []
 	const byMaster = bySchedule(branch, date)
 	if (masterId !== null && masterId !== undefined)
 		return fitSlots(timeList(byMaster[masterId]), minutes)
@@ -264,6 +283,7 @@ export function nearestSlots(branch, masterId, count = 3, minutes = DEFAULT_MINU
 	const schedule = branch?.schedule ?? {}
 	const now = Date.now()
 	for (const date of Object.keys(schedule).sort()) {
+		if (!isWorkday(date)) continue
 		const times = fitSlots(timeList(bySchedule(branch, date)[masterId]), minutes).filter(
 			(time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS,
 		)
