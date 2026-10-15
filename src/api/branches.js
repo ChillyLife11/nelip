@@ -101,24 +101,30 @@ export function loadedBranchesWithService(serviceId) {
 	return branches ? withService(branches, serviceId) : null
 }
 
-// Позже этого часа не записываем, даже если бэкенд отдал слоты: расписание
-// приходит до 22:00, а приём заканчивается в 17:00. Ограничение общее для всего
-// приложения — и для сетки времени, и для ближайших слотов в карточке врача, и
-// для рабочих дней в календаре, потому что все три читают расписание через
-// timeList() ниже.
-const LAST_SLOT = '17:00'
+// Рабочий день клиники — с 10:00 до 18:00, а расписание бэкенд отдаёт шире (с
+// утра и до 22:00), поэтому лишние слоты режем у себя. DAY_END — это закрытие, а
+// не последний слот: старт в 18:00 не предлагаем, а приём, начатый раньше,
+// должен уложиться до него. Длительность при этом проверяет fitSlots — ему нужны
+// свободные слоты на весь приём, а за границей дня их просто нет, поэтому старты
+// вроде 17:50 остаются только для коротких услуг.
+// Ограничение общее для всего приложения — и для сетки времени, и для ближайших
+// слотов в карточке врача, и для рабочих дней в календаре, потому что все три
+// читают расписание через timeList() ниже.
+const DAY_START = '10:00'
+const DAY_END = '18:00'
 
 function minutesOf(time) {
 	const [hours, mins] = String(time).split(':').map(Number)
 	return Number.isFinite(hours) ? hours * 60 + (mins || 0) : null
 }
 
-const LAST_SLOT_MINUTES = minutesOf(LAST_SLOT)
+const DAY_START_MINUTES = minutesOf(DAY_START)
+const DAY_END_MINUTES = minutesOf(DAY_END)
 
 // Часы врача на дату. Бэкенд отдаёт их в двух видах: массивом ["09:00", …] и
 // объектом { "1": "11:00", "3": "13:00" } — это PHP отдаёт разреженный массив
 // (после занятых слотов индексы идут с пропусками) объектом, а не списком.
-// Приводим оба вида к массиву времён и отсекаем всё после LAST_SLOT.
+// Приводим оба вида к массиву времён и оставляем только рабочий день.
 function timeList(slots) {
 	const list = Array.isArray(slots)
 		? slots
@@ -127,7 +133,7 @@ function timeList(slots) {
 			: []
 	return list.filter((time) => {
 		const minutes = minutesOf(time)
-		return minutes !== null && minutes <= LAST_SLOT_MINUTES
+		return minutes !== null && minutes >= DAY_START_MINUTES && minutes < DAY_END_MINUTES
 	})
 }
 
