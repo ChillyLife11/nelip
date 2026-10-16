@@ -12,6 +12,7 @@ import {
 	nearestSlots,
 	serviceMinutes,
 } from '@/api/branches'
+import { givenNameOf, surnameOf } from '@/api/coworkers'
 import { fileUrl } from '@/config'
 import { useBooking } from '@/composables/useBooking'
 
@@ -28,10 +29,11 @@ const doctors = ref([])
 const failed = ref(false)
 const selected = ref(null)
 
-// ФИО лежит во вложенном profile, но у всех врачей с услугами поля перепутаны
-// местами: фамилия приходит в first_name, имя — в last_name.
-const surnameOf = (c) => c.profile?.first_name?.trim() || c.username
-const nameOf = (c) => c.profile?.last_name?.trim() ?? ''
+// В карточке фамилия отдельной строкой, под ней имя с отчеством. Разбор полей —
+// в @/api/coworkers, общий для всех экранов. Без фамилии остаётся служебный
+// логин: пустой карточки быть не должно.
+const cardSurname = (c) => surnameOf(c.profile) || c.username
+const cardName = (c) => givenNameOf(c.profile)
 // Должность придёт с бэка позже — пока подставляем дефолт.
 const positionOf = (c) => c.position || 'Терапевт'
 
@@ -112,8 +114,8 @@ function submit() {
 			<DoctorCard
 				v-for="doctor in doctors"
 				:key="doctor.id"
-				:surname="surnameOf(doctor)"
-				:name="nameOf(doctor)"
+				:surname="cardSurname(doctor)"
+				:name="cardName(doctor)"
 				:specialty="positionOf(doctor)"
 				:date="slotsOf.get(doctor.id)?.date"
 				:times="slotsOf.get(doctor.id)?.times"

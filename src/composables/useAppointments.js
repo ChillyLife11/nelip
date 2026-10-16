@@ -12,6 +12,7 @@ import {
 	isHistorical,
 } from '@/api/appointments'
 import { shortAddress } from '@/api/branches'
+import { fullNameOf } from '@/api/coworkers'
 import { clientId } from '@/session'
 
 // Экранам нужен и вид записи по статусу — отдаём его отсюда же, чтобы вьюхи
@@ -26,19 +27,14 @@ export function serviceTitle(appointment) {
 // Врач приходит вложенным объектом; если его в ответе нет — вернём пустую строку,
 // вызывающий код такую строку прячет.
 //
-// ФИО лежит в `master.profile`, причём поля перепутаны местами: фамилия в
-// `first_name`, имя в `last_name` — как и у сотрудников филиала (см. ViewDoctors).
-// Поэтому «Дугаров Баян» собирается именно в таком порядке. Плоские поля
-// оставлены как запасной вариант, `username` — последний (там служебный логин
-// вида «dugarov-baan-16»).
+// ФИО лежит в `master.profile` и собирается как у сотрудников филиала — разбор
+// полей в @/api/coworkers. Плоские поля оставлены как запасной вариант (имена
+// там те же), `username` — последний: это служебный логин вида
+// «dugarov-baan-16».
 export function doctorName(appointment) {
 	const master = appointment.master ?? appointment.user ?? appointment.coworker
 	if (!master) return ''
-	const profile = master.profile
-	const name = profile
-		? [profile.first_name, profile.last_name, profile.middle_name].filter(Boolean).join(' ')
-		: [master.last_name, master.first_name, master.middle_name].filter(Boolean).join(' ')
-	return name || master.username || ''
+	return fullNameOf(master.profile ?? master) || master.username || ''
 }
 
 // Филиал приходит вложенным объектом — показываем улицу и дом, как в списке

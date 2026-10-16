@@ -6,8 +6,8 @@ import { LEAD_MS } from '@/composables/useBooking'
 // Без filter[company_id] бэкенд отдаёт филиалы всех клиник разом.
 // Элемент: { id, title, address, company_id, services[], coworkers[] } —
 // услуги и сотрудники филиала приходят вложенными, отдельных запросов нет.
-// Сотрудник: { id, username, status, services[], profile: { first_name,
-// last_name, avatar, phone } }.
+// Сотрудник: { id, username, status, services[], profile: { last_name (фамилия),
+// first_name (имя), second_name (отчество), avatar, phone } }.
 // Держим загруженное на один сеанс записи: по шагам ходят вперёд-назад, и
 // повторный заход на экран не должен ждать сеть. Кеш живёт от старта флоу
 // (startBooking/startRepeat зовут dropBranches()) до его конца — расписание и

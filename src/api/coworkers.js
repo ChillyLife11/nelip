@@ -15,6 +15,30 @@ export function getSchedule({ masterId, branchId, date }) {
 		.then((r) => r.data ?? {})
 }
 
+// ФИО сотрудника лежит во вложенном profile: last_name — фамилия, first_name —
+// имя, second_name — отчество (бэкенд добавил отчество 16.10.2026 и тогда же
+// подтвердил порядок — до этого фамилию читали из first_name, считая поля
+// перепутанными). Отчество раньше встречалось в middle_name, поэтому оставляем
+// его запасным вариантом. Те же поля приходят плоскими у врача в записи, так что
+// функции принимают profile или самого человека.
+const trimmed = (value) => String(value ?? '').trim()
+
+export function surnameOf(profile) {
+	return trimmed(profile?.last_name)
+}
+
+// Имя с отчеством одной строкой: «Константин Сергеевич».
+export function givenNameOf(profile) {
+	return [trimmed(profile?.first_name), trimmed(profile?.second_name ?? profile?.middle_name)]
+		.filter(Boolean)
+		.join(' ')
+}
+
+// Полное ФИО: «Нелип Константин Сергеевич».
+export function fullNameOf(profile) {
+	return [surnameOf(profile), givenNameOf(profile)].filter(Boolean).join(' ')
+}
+
 // Плоский список времён на дату из ответа get-schedule.
 export function scheduleTimes(schedule, date) {
 	return Object.values(schedule?.[date] ?? {})

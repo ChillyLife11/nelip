@@ -26,6 +26,7 @@ import UiPageTitle from '@/components/ui/UiPageTitle.vue'
 import UiLoader from '@/components/ui/UiLoader.vue'
 import BookingConfirm from '@/components/booking/BookingConfirm.vue'
 import { createAppointment } from '@/api/appointments'
+import { fullNameOf } from '@/api/coworkers'
 import {
 	branchServices,
 	getBranch,
@@ -205,12 +206,10 @@ const chosenDoctor = computed(() =>
 	(branch.value?.coworkers ?? []).find((coworker) => coworker.id === masterId.value),
 )
 
-// ФИО врача приходит перепутанным: фамилия в first_name, имя в last_name.
-const doctorName = computed(() => {
-	const profile = chosenDoctor.value?.profile
-	const full = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ').trim()
-	return full || (chosenDoctor.value?.username ?? '')
-})
+// ФИО целиком, с отчеством — разбор полей в @/api/coworkers.
+const doctorName = computed(
+	() => fullNameOf(chosenDoctor.value?.profile) || (chosenDoctor.value?.username ?? ''),
+)
 
 const dateFormatter = new Intl.DateTimeFormat('ru', {
 	day: '2-digit',

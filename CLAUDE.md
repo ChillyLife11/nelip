@@ -723,13 +723,19 @@ c `source: "max"`, `branch_id: 1`, датой `YYYY-MM-DD` и `start` из вы�
   отдаёт `'complete' | 'canceled' | 'pending'`, `HistoryCard` принимает `status`
   (не булев флаг): `5` — галочка, `6` — крест, всё остальное и отсутствие
   статуса — часы.
-- **ФИО врача перепутаны местами** в ответе бэка: фамилия лежит в
-  `profile.first_name`, имя — в `profile.last_name`. В `ViewDoctors` это учтено,
-  не «чинить» переименованием. В записи (`/appointment/index`) врач приходит так
-  же — `master.profile.{first_name,last_name}`, плюс там же его `avatar`;
-  в корне `master` только `id`, `username` (служебный логин вида
-  «dugarov-baan-16») и `services`. `doctorName()` в `useAppointments` читает
-  именно `profile`.
+- **ФИО врача разбирает один модуль** — `surnameOf()`, `givenNameOf()` и
+  `fullNameOf()` в `api/coworkers.js`; экраны своих разборов не держат.
+  Поля в `profile`: `last_name` — фамилия, `first_name` — имя, `second_name` —
+  отчество (16.10.2026 бэкенд добавил отчество и подтвердил порядок).
+  ⚠️ **До этого в коде было записано обратное** — что поля перепутаны и фамилия
+  лежит в `first_name`; все три экрана собирали «Фамилию Имя» наоборот. Если
+  имя с фамилией снова поменяются местами, чинить надо в `api/coworkers.js`, а
+  не по экранам. Отчество раньше встречалось как `middle_name` — оно осталось
+  запасным вариантом в `givenNameOf()`.
+  В записи (`/appointment/index`) врач приходит так же — `master.profile`, плюс
+  там же его `avatar`; в корне `master` только `id`, `username` (служебный логин
+  вида «dugarov-baan-16») и `services`. `doctorName()` в `useAppointments`
+  читает `profile`, а плоские поля берёт запасным вариантом — имена у них те же.
 - ⚠️ **Переход между экранами ломается на скрытой вкладке.** Vue ведёт анимацию
   `<Transition>` через `requestAnimationFrame`, а браузер не вызывает его, пока
   вкладка (или мини-аппа) в фоне: переход застревает на `enter-from` с
