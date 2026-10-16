@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import HttpToasts from '@/components/debug/HttpToasts.vue'
 import { DEBUG_HTTP } from '@/config'
@@ -26,12 +26,28 @@ router.afterEach(() => {
 // экран остаётся пустым навсегда — даже когда вкладку вернули. Это не гипотеза:
 // воспроизведено в браузере (сплэш висит две секунды, и если за это время уйти
 // на другую вкладку, приложение больше не покажет ничего).
-// Поэтому на скрытой вкладке рендерим экран вообще без <Transition> — смена
-// происходит сразу, без анимации и без ожидания кадра. Убирать нельзя.
+// Поэтому на скрытой вкладке переход идёт без CSS (`:css="false"`), а завершаем
+// мы его сами — хуками, которые сразу зовут `done`. Одного `:css` мало: без
+// хуков Vue некому сказать, что анимация кончилась, и экран не появляется вовсе
+// (проверено — в `<div>` остаётся только комментарий).
+// Хуки вешаем только на скрытой вкладке и целым объектом: Vue смотрит на число
+// аргументов хука и, увидев `done`, перестаёт ждать конца CSS-перехода — на
+// видимой вкладке это оборвало бы анимацию на первом кадре.
+// ⚠️ Ветку шаблона при этом менять нельзя. Раньше здесь стояло `v-if="!hidden"`
+// с голым <component> во второй ветке, и каждое переключение вкладки меняло
+// ветку — Vue пересоздавал экран, а вместе с ним терялось его состояние:
+// открытое окно об успешной записи исчезало при уходе на соседнюю вкладку.
 const hidden = ref(document.visibilityState === 'hidden')
 document.addEventListener('visibilitychange', () => {
 	hidden.value = document.visibilityState === 'hidden'
 })
+
+// `done` зовём микрозадачей, а не сразу: синхронный вызов внутри onLeave
+// роняет Vue на mode="out-in" (TypeError «parentNode of null»), и экран
+// остаётся пустым. Микрозадача, а не setTimeout: таймеры в фоновой вкладке
+// Chrome тормозит до секунды.
+const instantly = (el, done) => queueMicrotask(done)
+const hiddenHooks = computed(() => (hidden.value ? { onEnter: instantly, onLeave: instantly } : {}))
 </script>
 
 <template>
@@ -40,12 +56,12 @@ document.addEventListener('visibilitychange', () => {
 
 	<div class="flex min-h-screen *:w-full">
 		<RouterView v-slot="{ Component }">
-			<!-- На скрытой вкладке переход не используем вовсе: без него экран
-			     меняется сразу, с ним — застревает (см. комментарий в скрипте). -->
-			<Transition v-if="!hidden" :name="direction" mode="out-in">
+			<!-- На скрытой вкладке переход идёт без CSS и завершается хуками:
+			     кадров анимации там нет (см. комментарий в скрипте). Ветку
+			     шаблона при этом не меняем — иначе экран пересоздаётся. -->
+			<Transition :name="direction" :css="!hidden" v-bind="hiddenHooks" mode="out-in">
 				<component :is="Component" :key="route.fullPath" />
 			</Transition>
-			<component :is="Component" v-else :key="route.fullPath" />
 		</RouterView>
 	</div>
 </template>
