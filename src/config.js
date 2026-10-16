@@ -27,15 +27,17 @@ export const DEBUG_HTTP = false
 // (прокси в dev настроен только на /api).
 export const MEDIA_BASE = import.meta.env.VITE_API_HOST ?? 'https://medix.amgs.online'
 
-// Файл, лежащий рядом со сборкой мини-аппы (<host>/max/app-<company_id>/…).
-// База — та же, что у ассетов: в прод-сборке это полный адрес с хостом, в dev
-// просто корень. Так документы клиники не приходится вшивать хостом в код.
-export function appUrl(path) {
-	return import.meta.env.BASE_URL + String(path).replace(/^\//, '')
-}
-
 export function fileUrl(path) {
 	if (!path) return ''
 	if (/^https?:\/\//.test(path)) return path
 	return MEDIA_BASE + (path.startsWith('/') ? path : `/${path}`)
+}
+
+// Документы клиники: политика обработки ПДн и согласие на рассылку. Лежат в
+// корне бэкенд-хоста (MEDIA_BASE), а не рядом со сборкой: у мини-аппы на сервере
+// своя папка компании, файлов там нет. Адреса нужны в двух местах — в окне
+// согласий и в «Правовой информации» на главной, поэтому держим их здесь.
+export const DOCS = {
+	policy: fileUrl('policy.pdf'),
+	privacy: fileUrl('privacy.pdf'),
 }

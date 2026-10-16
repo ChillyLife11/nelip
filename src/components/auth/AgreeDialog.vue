@@ -11,7 +11,7 @@ import { ExternalLink } from '@lucide/vue'
 import UiBtn from '@/components/ui/UiBtn.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useMessenger } from '@/composables/useMessenger'
-import { FALLBACK_PHONE } from '@/config'
+import { DOCS, FALLBACK_PHONE } from '@/config'
 
 const open = defineModel('open', { type: Boolean, default: false })
 const emit = defineEmits(['signed'])
@@ -37,12 +37,6 @@ const error = ref('')
 const policy_read = ref(true)
 const marketing_agree = ref(false)
 const agreed = computed(() => policy_read.value && marketing_agree.value)
-
-// Документы клиники: политика и согласие на рассылку.
-const DOCS = {
-	policy: 'https://dental-web.pro/policy.pdf',
-	privacy: 'https://dental-web.pro/privacy.pdf',
-}
 
 // Номер спрашиваем у мессенджера — окно и открыто как раз для того, чтобы
 // пользователь дал согласия и поделился контактом. В MAX фолбэка нет: не дал

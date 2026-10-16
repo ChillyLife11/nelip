@@ -17,7 +17,7 @@ import { NotebookPen, CalendarDays, Clock, User, ChevronLeft, ChevronRight } fro
 import { useBooking } from '@/composables/useBooking'
 import { useAuth } from '@/composables/useAuth'
 import { useMessenger } from '@/composables/useMessenger'
-import { appUrl } from '@/config'
+import { DOCS } from '@/config'
 
 const router = useRouter()
 const { startBooking } = useBooking()
@@ -26,11 +26,11 @@ const { startBooking } = useBooking()
 const { clientName, clientPhoto } = useAuth()
 const defaultPhoto = `${import.meta.env.BASE_URL}images/doctor-img.png`
 
-// «Правовая информация» — документ рядом со сборкой, в папке компании.
-// Внутри MAX PDF не отрисовывается, а скачивается, поэтому зовём openLink() и
-// файл показывает системный браузер.
+// «Правовая информация» — политика обработки ПДн, та же, что в окне согласий
+// (адрес в @/config). Внутри MAX PDF не отрисовывается, а скачивается, поэтому
+// зовём openLink() и файл показывает системный браузер.
 const { openLink } = useMessenger()
-const LEGAL_DOC = appUrl('policy.pdf')
+const LEGAL_DOC = DOCS.policy
 
 function openDocument(event, url) {
 	if (openLink(url)) event.preventDefault()
