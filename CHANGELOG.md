@@ -5,6 +5,13 @@
 Формат — [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/),
 версионирование — [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.3] - 2026-10-16
+
+### Changed
+
+- CLAUDE.md: описание окна подтверждения записи (строка филиала без иконки и
+  почему это отдельный флаг) и состав `config.js` с `api/coworkers.js`.
+
 ## [0.13.2] - 2026-10-16
 
 ### Changed

@@ -148,12 +148,13 @@ src/
   style.css               # tailwind @theme, шрифты, анимации
   views/                  # экраны (см. таблицу соответствия)
   api/                    # http.js (axios+Bearer+apiErrorMessage), users, branches,
-                          # coworkers, promos, appointments, feedback
+                          # coworkers (расписание + разбор ФИО), promos,
+                          # appointments, feedback
   composables/            # useAuth, useMessenger, useBooking, useAppointments,
                           # useHttpLog (журнал для отладочных тостов)
   session.js              # токен / client_id / телефон — только в памяти
   config.js               # API_BASE, COMPANY_ID, MEDIA_BASE, TEST_PHONE,
-                          # FALLBACK_PHONE, DEBUG_HTTP, fileUrl
+                          # FALLBACK_PHONE, DEBUG_HTTP, DOCS, fileUrl
   components/
     ui/UiBtn.vue          # базовая кнопка (варианты color/soft/outline/icon/fluid, to→RouterLink)
     ui/UiLoader.vue       # общий индикатор загрузки
@@ -631,8 +632,12 @@ c `source: "max"`, `branch_id: 1`, датой `YYYY-MM-DD` и `start` из вы�
 - **Запись создаётся из окна подтверждения**, а не по кнопке экрана: «Записаться»
   на `/datetime` открывает `BookingConfirm` со сводкой (услуга, врач, дата и
   время, филиал), и только «Подтвердить запись» зовёт `appointment/create`.
-  Иконка у строки ведёт на свой шаг (`/service`, `/doctors`); у даты, времени и
-  филиала шага нет — окно просто закрывается.
+  Иконка у строки ведёт на свой шаг (`/service`, `/doctors`); у даты и времени
+  шага нет — иконка есть, но она просто закрывает окно, экран под ним и есть
+  этот шаг. **У филиала иконки нет вовсе** (`fixed: true` в строке сводки):
+  филиал один, шага выбора под ним нет, менять нечего. Поэтому признак «строку
+  не поменять» — отдельный флаг, а не отсутствие `step`: иначе пропала бы и
+  иконка у даты.
   «Отменить запись» и крестик делают одно и то же — закрывают окно, не трогая
   выбор: человек мог передумать только насчёт отправки. Ошибку создания показываем там
   же, в окне.
