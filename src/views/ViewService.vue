@@ -43,6 +43,39 @@ onMounted(async () => {
 	}
 })
 
+// Названия услуг длинные и в списке сливаются в сплошной текст, поэтому главную
+// часть выделяем жирным (просьба клиники, 17.10.2026). Главная часть — это
+// специалист у приёмов («Первичный приём **онколога-маммолога** с обязательным
+// УЗИ…») и само название у процедур («**Маммография**»). Выделяем на своей
+// стороне: в названиях с бэкенда разметки нет.
+const SPECIALIST = /^(.*?при[еёЕЁ]м\s+(?:врача\s+)?)([а-яё]+(?:-[а-яё]+)*)/i
+// Начало названия до первого уточнения: «с …», «на …», запятой или скобки.
+const LEADING = /^([А-ЯЁ][^,(]*?)(?=\s+(?:с|со|на|для|при|под)\s|,|\(|$)/
+
+function titleParts(title) {
+	const text = String(title ?? '')
+		.replace(/\s+/g, ' ')
+		.trim()
+	const specialist = text.match(SPECIALIST)
+	if (specialist) {
+		const [, before, name] = specialist
+		return [
+			{ text: before },
+			{ text: name, bold: true },
+			{ text: text.slice(before.length + name.length) },
+		].filter((part) => part.text)
+	}
+	// Без приёма выделяем начало названия — но только если оно короткое: в
+	// длинной фразе жирным окажется полстроки, и смысла в выделении не будет.
+	const leading = text.match(LEADING)
+	if (leading && leading[1].split(' ').length <= 3) {
+		return [{ text: leading[1], bold: true }, { text: text.slice(leading[1].length) }].filter(
+			(part) => part.text,
+		)
+	}
+	return [{ text }]
+}
+
 // Цена приходит отдельным полем строкой — «1000.00». В макете она стоит прямо
 // в строке услуги через дефис: «Маммография - 1800 руб.». Копеек у цен нет,
 // поэтому показываем целыми рублями.
@@ -87,7 +120,14 @@ async function submit() {
 				:value="service.id"
 				class="flex items-center w-full min-h-10.75 py-3 px-[15px] rounded-control border border-transparent bg-card text-left text-15 leading-[1.1] text-brand duration-60 active:scale-[0.98] data-[state=checked]:border-brand data-[state=checked]:bg-card-darker"
 			>
-				{{ service.title }}{{ priceLabel(service) }}
+				<span>
+					<span
+						v-for="(part, index) in titleParts(service.title)"
+						:key="index"
+						:class="part.bold ? 'font-bold' : ''"
+						>{{ part.text }}</span
+					>{{ priceLabel(service) }}
+				</span>
 			</RadioGroupItem>
 		</RadioGroupRoot>
 
