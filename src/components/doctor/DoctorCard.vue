@@ -50,8 +50,11 @@ defineProps({
 				</span>
 			</div>
 		</div>
-		<!-- Снимок вписываем целиком (object-contain) — обрезать нельзя. -->
+		<!-- Снимок вписываем целиком (object-contain) — обрезать нельзя.
+		     Фото может не быть: тогда справа остаётся пустое место, карточка
+		     не меняет размеров. -->
 		<img
+			v-if="photo"
 			:src="photo"
 			alt=""
 			class="absolute bottom-0 right-0 w-36 h-full object-contain object-right-bottom pointer-events-none"

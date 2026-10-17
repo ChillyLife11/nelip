@@ -20,9 +20,10 @@ const router = useRouter()
 const { branchId, serviceId, masterId } = useBooking()
 
 // Аватар приходит путём вида /uploads/Дабаев.jpg — префиксуем хостом бэка.
-// Если фото нет, показываем заглушку из public/images.
-const defaultPhoto = `${import.meta.env.BASE_URL}images/doctor-img.png`
-const photoOf = (c) => (c.profile?.avatar ? fileUrl(c.profile.avatar) : defaultPhoto)
+// Фото может не быть (врача завели недавно) — тогда отдаём пустую строку, и
+// карточка просто оставляет это место пустым. Заглушка с чужим лицом была бы
+// хуже: её принимают за фото врача.
+const photoOf = (c) => (c.profile?.avatar ? fileUrl(c.profile.avatar) : '')
 
 const branch = ref(null)
 const doctors = ref([])
@@ -34,8 +35,10 @@ const selected = ref(null)
 // логин: пустой карточки быть не должно.
 const cardSurname = (c) => surnameOf(c.profile) || c.username
 const cardName = (c) => givenNameOf(c.profile)
-// Должность придёт с бэка позже — пока подставляем дефолт.
-const positionOf = (c) => c.position || 'Терапевт'
+// Специальность приходит строкой в `specialities` — это может быть и должность,
+// и перечисление («Маммолог, онколог, хирург…»). Пустую строку карточка не
+// показывает вовсе; раньше здесь стояло выдуманное «Терапевт».
+const positionOf = (c) => String(c.specialities ?? '').trim()
 
 // Оставляем только тех, кто оказывает выбранную услугу. У части сотрудников
 // филиала услуг нет вовсе — записаться к ним нельзя, в список они не попадают.
