@@ -5,6 +5,13 @@
 Формат — [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/),
 версионирование — [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1] - 2026-10-17
+
+### Changed
+
+- Фотография клиники на экране «Информация о клинике» переведена в webp
+  (`clinic-photo-new.webp`): 822 КБ → 209 КБ при том же разрешении 1280×854.
+
 ## [0.14.0] - 2026-10-17
 
 ### Added

@@ -5,7 +5,7 @@
 const asset = (name) => `${import.meta.env.BASE_URL}images/${name}`
 
 export const clinicInfo = {
-	photo: asset('clinic-photo.jpg'),
+	photo: asset('clinic-photo-new.webp'),
 	title: 'Эффективное лечение и точная диагностика',
 	paragraphs: [
 		'Маммологический и онкологический центр в городе Улан-Удэ предлагает вам квалифицированную помощь от одних из лучших в стране специалистов в области онкологии.',
