@@ -101,17 +101,22 @@ export function loadedBranchesWithService(serviceId) {
 	return branches ? withService(branches, serviceId) : null
 }
 
-// Рабочий день клиники — с 10:00 до 18:00, а расписание бэкенд отдаёт шире (с
+// Рабочий день клиники — с 10:00 до 17:00, а расписание бэкенд отдаёт шире (с
 // утра и до 22:00), поэтому лишние слоты режем у себя. DAY_END — это закрытие, а
-// не последний слот: старт в 18:00 не предлагаем, а приём, начатый раньше,
+// не последний слот: старт в 17:00 не предлагаем, а приём, начатый раньше,
 // должен уложиться до него. Длительность при этом проверяет fitSlots — ему нужны
 // свободные слоты на весь приём, а за границей дня их просто нет, поэтому старты
-// вроде 17:50 остаются только для коротких услуг.
+// у края дня остаются только для коротких услуг.
 // Ограничение общее для всего приложения — и для сетки времени, и для ближайших
 // слотов в карточке врача, и для рабочих дней в календаре, потому что все три
 // читают расписание через timeList() ниже.
 const DAY_START = '10:00'
-const DAY_END = '18:00'
+const DAY_END = '17:00'
+// Исключение: маммография идёт до 18:00 — аппарат работает дольше, чем ведут
+// приём врачи (просьба клиники 19.10.2026; маммографию ведёт Митрофанов
+// Дмитрий, но завязываемся на услугу, а не на врача: врач может смениться).
+const LATE_DAY_END = '18:00'
+const LATE_SERVICE = /маммограф/i
 
 function minutesOf(time) {
 	const [hours, mins] = String(time).split(':').map(Number)
@@ -120,12 +125,19 @@ function minutesOf(time) {
 
 const DAY_START_MINUTES = minutesOf(DAY_START)
 const DAY_END_MINUTES = minutesOf(DAY_END)
+const LATE_DAY_END_MINUTES = minutesOf(LATE_DAY_END)
+
+// До какого часа записывают на эту услугу. Услуги нет (кеш ещё не доехал) —
+// считаем по общему правилу, чтобы случайно не открыть лишний час.
+export function serviceDayEnd(service) {
+	return LATE_SERVICE.test(service?.title ?? '') ? LATE_DAY_END_MINUTES : DAY_END_MINUTES
+}
 
 // Часы врача на дату. Бэкенд отдаёт их в двух видах: массивом ["09:00", …] и
 // объектом { "1": "11:00", "3": "13:00" } — это PHP отдаёт разреженный массив
 // (после занятых слотов индексы идут с пропусками) объектом, а не списком.
 // Приводим оба вида к массиву времён и оставляем только рабочий день.
-function timeList(slots) {
+function timeList(slots, dayEnd = DAY_END_MINUTES) {
 	const list = Array.isArray(slots)
 		? slots
 		: slots && typeof slots === 'object'
@@ -133,7 +145,7 @@ function timeList(slots) {
 			: []
 	return list.filter((time) => {
 		const minutes = minutesOf(time)
-		return minutes !== null && minutes >= DAY_START_MINUTES && minutes < DAY_END_MINUTES
+		return minutes !== null && minutes >= DAY_START_MINUTES && minutes < dayEnd
 	})
 }
 
@@ -165,14 +177,15 @@ function bySchedule(branch, date) {
 // расписании нет, для записи закрыты. Выходные клиники он при этом присылает,
 // их отсекает isWorkday().
 // Врача учитываем: в один и тот же день в филиале принимают не все.
-export function scheduleDates(branch, masterId = null) {
+export function scheduleDates(branch, masterId = null, service = null) {
 	const schedule = branch?.schedule ?? {}
+	const dayEnd = serviceDayEnd(service)
 	const open = Object.keys(schedule).filter((date) => {
 		if (!isWorkday(date)) return false
 		const byMaster = bySchedule(branch, date)
 		return masterId === null
-			? Object.values(byMaster).some((slots) => timeList(slots).length)
-			: timeList(byMaster[masterId]).length > 0
+			? Object.values(byMaster).some((slots) => timeList(slots, dayEnd).length)
+			: timeList(byMaster[masterId], dayEnd).length > 0
 	})
 	return new Set(open)
 }
@@ -265,13 +278,16 @@ export function fitSlots(times, minutes = DEFAULT_MINUTES) {
 // Часы врача на конкретный день — сетка времени на последнем шаге записи.
 // masterId === null: объединяем часы всех врачей филиала (тот же режим, что и
 // у scheduleDates), иначе берём только выбранного.
-export function scheduleSlots(branch, masterId, date, minutes = DEFAULT_MINUTES) {
+export function scheduleSlots(branch, masterId, date, service = null) {
 	if (!isWorkday(date)) return []
+	const dayEnd = serviceDayEnd(service)
+	const minutes = serviceMinutes(service)
 	const byMaster = bySchedule(branch, date)
 	if (masterId !== null && masterId !== undefined)
-		return fitSlots(timeList(byMaster[masterId]), minutes)
+		return fitSlots(timeList(byMaster[masterId], dayEnd), minutes)
 	const all = new Set()
-	for (const slots of Object.values(byMaster)) for (const time of timeList(slots)) all.add(time)
+	for (const slots of Object.values(byMaster))
+		for (const time of timeList(slots, dayEnd)) all.add(time)
 	return fitSlots([...all], minutes)
 }
 
@@ -279,14 +295,17 @@ export function scheduleSlots(branch, masterId, date, minutes = DEFAULT_MINUTES)
 // Идём по датам расписания с начала и берём первый день, где ещё осталось
 // время: прошедшие часы и ближайший час от «сейчас» не в счёт, как и на
 // экране выбора времени.
-export function nearestSlots(branch, masterId, count = 3, minutes = DEFAULT_MINUTES) {
+export function nearestSlots(branch, masterId, count = 3, service = null) {
 	const schedule = branch?.schedule ?? {}
+	const dayEnd = serviceDayEnd(service)
+	const minutes = serviceMinutes(service)
 	const now = Date.now()
 	for (const date of Object.keys(schedule).sort()) {
 		if (!isWorkday(date)) continue
-		const times = fitSlots(timeList(bySchedule(branch, date)[masterId]), minutes).filter(
-			(time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS,
-		)
+		const times = fitSlots(
+			timeList(bySchedule(branch, date)[masterId], dayEnd),
+			minutes,
+		).filter((time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS)
 		if (times.length) return { date, times: times.slice(0, count) }
 	}
 	return null

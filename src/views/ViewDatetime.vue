@@ -34,7 +34,6 @@ import {
 	nearestSlots,
 	scheduleDates,
 	scheduleSlots,
-	serviceMinutes,
 	shortAddress,
 } from '@/api/branches'
 import { apiErrorMessage } from '@/api/http'
@@ -65,6 +64,14 @@ onMounted(async () => {
 	}
 })
 
+// Услуга нужна раньше дней и сетки времени: от неё зависят и длительность
+// приёма, и час закрытия (маммография идёт до 18:00, остальное до 17:00) —
+// см. serviceDayEnd и fitSlots в @/api/branches. Объявление должно стоять выше
+// openDates: watch по нему с immediate читает услугу прямо в setup.
+const chosenService = computed(() =>
+	branchServices(branch.value).find((service) => service.id === serviceId.value),
+)
+
 // Дни, когда выбранный врач принимает в этом филиале. Расписание приходит в
 // филиале и покрывает только ближайшую неделю — дни за её пределами закрыты:
 // их видно, но выбрать нельзя.
@@ -72,14 +79,14 @@ onMounted(async () => {
 // тогда нерабочие дни получают `data-unavailable`, а прошедшие (их отсекает
 // `min-value`) — `data-disabled`, и в вёрстке их можно развести по виду:
 // прошедшие зачёркнуты, нерабочие просто бледные, рабочие чёрные.
-const openDates = computed(() => scheduleDates(branch.value, masterId.value))
+const openDates = computed(() => scheduleDates(branch.value, masterId.value, chosenService.value))
 const isDateClosed = (dateValue) => !openDates.value.has(dateValue.toString())
 
 // День, с которого открываем экран: первый, где ещё осталось свободное время.
 // Не просто первый рабочий — сегодня приём мог уже закончиться, и человек попал
 // бы на день, где все часы серые. Это тот же день, что показан в карточке врача.
 function firstOpenDate() {
-	const nearest = nearestSlots(branch.value, masterId.value, 1)?.date
+	const nearest = nearestSlots(branch.value, masterId.value, 1, chosenService.value)?.date
 	const [first] = [...openDates.value].sort()
 	const day = nearest ?? first
 	return day ? parseDate(day) : null
@@ -120,24 +127,16 @@ const selectedTime = ref(null)
 const hourOf = (t) => Number(t.split(':')[0])
 const minuteOf = (t) => Number(t.split(':')[1])
 
-// Услуга нужна раньше сетки времени: от её длительности зависит, какие слоты
-// вообще можно показать (см. fitSlots в @/api/branches).
-const chosenService = computed(() =>
-	branchServices(branch.value).find((service) => service.id === serviceId.value),
-)
-
-const serviceDuration = computed(() => serviceMinutes(chosenService.value))
-
 // Часы приёма приходят из расписания филиала — те же, что показаны в карточке
-// врача. Сетка зависит от врача и дня: у одного день с 10 до 18, у другого только
-// 15:30 и 16:30. Занят ли конкретный час, всё равно проверит бэкенд при создании.
+// врача. Сетка зависит от врача, дня и услуги: у одного день с 10 до 17, у
+// другого только 15:30 и 16:30, а маммография идёт до 18:00. Занят ли конкретный час, всё равно проверит бэкенд при создании.
 const hours = computed(() =>
 	selectedDate.value
 		? scheduleSlots(
 				branch.value,
 				masterId.value,
 				selectedDate.value.toString(),
-				serviceDuration.value,
+				chosenService.value,
 			)
 		: [],
 )
