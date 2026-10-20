@@ -48,8 +48,9 @@ function openDocument(event, url) {
 	if (openLink(url)) event.preventDefault()
 }
 
-// Согласие на обработку ПДн даётся самим фактом продолжения (так написано в
-// заголовке), поэтому отдельной галочки под него нет.
+// Согласие на обработку ПДн человек даёт первой галочкой: с 20.10.2026 в её
+// тексте и ознакомление с политикой, и само согласие (просьба клиники). Отдельной
+// галочки под него нет — и в заголовке окна то же сказано про «продолжая».
 async function submit() {
 	if (submitting.value || !agreed.value) return
 	submitting.value = true
@@ -96,7 +97,9 @@ async function submit() {
 						<span
 							class="shrink-0 block w-5 h-5 mr-2.5 rounded-control bg-secondary-soft peer-checked:bg-brand"
 						></span>
-						<span class="grow">Ознакомлен (-а) с политикой обработки ПД</span>
+						<span class="grow">
+							Ознакомлен (-а) с политикой ПД и даю согласие на обработку ПД
+						</span>
 					</label>
 					<label class="flex items-start">
 						<input v-model="marketing_agree" type="checkbox" class="peer" hidden />
