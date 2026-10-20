@@ -293,8 +293,7 @@ export function scheduleSlots(branch, masterId, date, service = null) {
 
 // Ближайшие свободные часы врача — для карточки на экране выбора врача.
 // Идём по датам расписания с начала и берём первый день, где ещё осталось
-// время: прошедшие часы и ближайший час от «сейчас» не в счёт, как и на
-// экране выбора времени.
+// время: прошедшие часы не в счёт, как и на экране выбора времени (LEAD_MS).
 export function nearestSlots(branch, masterId, count = 3, service = null) {
 	const schedule = branch?.schedule ?? {}
 	const dayEnd = serviceDayEnd(service)
