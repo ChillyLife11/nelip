@@ -109,8 +109,8 @@ export function loadedBranchesWithService(serviceId) {
 // свободные слоты на весь приём, а за границей дня их просто нет, поэтому старты
 // у края дня остаются только для коротких услуг.
 // Ограничение общее для всего приложения — и для сетки времени, и для ближайших
-// слотов в карточке врача, и для рабочих дней в календаре, потому что все три
-// читают расписание через timeList() ниже.
+// слотов в карточке врача, и для рабочих дней в календаре: все три строятся из
+// slotGrid() ниже.
 const DAY_START = '10:00'
 const DAY_END = '17:00'
 // Исключение: маммография идёт до 18:00 — аппарат работает дольше, чем ведут
@@ -144,13 +144,6 @@ function rawList(slots) {
 		: slots && typeof slots === 'object'
 			? Object.values(slots)
 			: []
-}
-
-function timeList(slots, window = { start: DAY_START_MINUTES, end: DAY_END_MINUTES }) {
-	return rawList(slots).filter((time) => {
-		const minutes = minutesOf(time)
-		return minutes !== null && minutes >= window.start && minutes < window.end
-	})
 }
 
 // Персональные часы врача: у части врачей день уже общего. Ключ — имя, а не id:
@@ -203,17 +196,17 @@ function bySchedule(branch, date) {
 // Бэкенд отдаёт только ближайшие дни (около недели) — значит дни, которых в
 // расписании нет, для записи закрыты. Выходные клиники он при этом присылает,
 // их отсекает isWorkday().
-// Врача учитываем: в один и тот же день в филиале принимают не все.
+// Врача и услугу учитываем: в один и тот же день в филиале принимают не все, а
+// длинный приём влезает не в каждый просвет.
+// ⚠️ День открыт, только если в нём есть старт, **куда влезает весь приём** —
+// ту же сетку показывает экран времени. Раньше здесь хватало любого свободного
+// слота, и получался выбираемый день с полностью серой сеткой: у врача оставался
+// один десятиминутный просвет, а приём идёт сорок минут.
 export function scheduleDates(branch, masterId = null, service = null) {
 	const schedule = branch?.schedule ?? {}
-	const window = dayWindow(branch, masterId, service)
-	const open = Object.keys(schedule).filter((date) => {
-		if (!isWorkday(date)) return false
-		const byMaster = bySchedule(branch, date)
-		return masterId === null
-			? Object.values(byMaster).some((slots) => timeList(slots, window).length)
-			: timeList(byMaster[masterId], window).length > 0
-	})
+	const open = Object.keys(schedule).filter((date) =>
+		slotGrid(branch, masterId, date, service).some((slot) => slot.free),
+	)
 	return new Set(open)
 }
 
