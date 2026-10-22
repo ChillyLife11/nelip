@@ -1,13 +1,7 @@
 import { fileURLToPath, URL } from 'node:url'
-import { readFileSync } from 'node:fs'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
-
-// Версию и время сборки показываем на сплэше: иначе нельзя на глаз отличить
-// «правка не доехала» от «доехала, но браузер держит старый бандл». Версия —
-// из package.json, её поднимают вместе с записью в CHANGELOG.
-const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -26,12 +20,6 @@ export default defineConfig(({ command, mode }) => {
 		// отдаёт всё из корня. VITE_BASE перебивает оба варианта.
 		base: env.VITE_BASE ?? (command === 'build' ? `${assetHost}/max/app-${companyId}/` : '/'),
 		plugins: [vue(), tailwindcss()],
-		define: {
-			__APP_VERSION__: JSON.stringify(pkg.version),
-			// Время сборки, а не коммита: интересует именно «когда это собрали».
-			// В dev стоит заглушка — там сборки нет.
-			__BUILD_TIME__: JSON.stringify(command === 'build' ? new Date().toISOString() : ''),
-		},
 		build: {
 			rollupOptions: {
 				output: {

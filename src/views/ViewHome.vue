@@ -12,19 +12,6 @@ const { checkAuth } = useAuth()
 // загрузки остаётся фоном, пока клиент не опознан.
 const agreeing = ref(false)
 
-// Версия сборки под крутилкой — чтобы на глаз отличать «правка не доехала» от
-// «доехала, но мини-апп держит старый бандл в кеше». Подставляет vite.config.js;
-// в dev времени сборки нет, показываем только номер.
-const version = __APP_VERSION__
-const buildTime = __BUILD_TIME__
-	? new Date(__BUILD_TIME__).toLocaleString('ru', {
-			day: '2-digit',
-			month: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-		})
-	: ''
-
 // Сплэш держим на экране не меньше двух секунд, даже если клиент опознался
 // быстрее: иначе логотип мелькает и запуск выглядит дёрганым.
 const MIN_SPLASH_MS = 2000
@@ -68,12 +55,6 @@ onMounted(async () => {
 			role="status"
 			aria-label="Загружаем"
 		/>
-
-		<!-- Версия сборки: мелко и приглушённо, пациенту она не мешает, а нам
-		     сразу видно, какой бандл открыт. -->
-		<span class="absolute bottom-10 text-13 text-brand/40">
-			{{ version }}<template v-if="buildTime"> · {{ buildTime }}</template>
-		</span>
 
 		<AgreeDialog v-model:open="agreeing" @signed="router.replace('/profile')" />
 	</div>

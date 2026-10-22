@@ -5,6 +5,13 @@
 Формат — [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/),
 версионирование — [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.1] - 2026-10-22
+
+### Removed
+
+- Версия и время сборки на сплэше — отметка была нужна для разовой проверки
+  деплоя.
+
 ## [0.19.0] - 2026-10-22
 
 ### Added
