@@ -202,12 +202,24 @@ function bySchedule(branch, date) {
 // ту же сетку показывает экран времени. Раньше здесь хватало любого свободного
 // слота, и получался выбираемый день с полностью серой сеткой: у врача оставался
 // один десятиминутный просвет, а приём идёт сорок минут.
+// ⚠️ И старт должен быть ещё впереди: сегодня свободные слоты могут остаться
+// только в прошлом, и день открывался с сеткой, где всё уже серое.
 export function scheduleDates(branch, masterId = null, service = null) {
 	const schedule = branch?.schedule ?? {}
+	const now = Date.now()
 	const open = Object.keys(schedule).filter((date) =>
-		slotGrid(branch, masterId, date, service).some((slot) => slot.free),
+		slotGrid(branch, masterId, date, service).some(
+			(slot) => slot.free && notPassed(date, slot.time, now),
+		),
 	)
 	return new Set(open)
+}
+
+// Старт ещё не прошёл (с учётом запаса LEAD_MS) — общее правило для дней
+// календаря и ближайших слотов в карточке врача. Экран времени проверяет то же
+// своим isTooSoon, только с «сейчас», которое тикает раз в минуту.
+function notPassed(date, time, now = Date.now()) {
+	return new Date(`${date}T${time}`).getTime() - now >= LEAD_MS
 }
 
 // Адрес приходит с городом впереди — «город Улан-Удэ, Павлова, 59А» или просто
@@ -330,8 +342,8 @@ export function nearestSlots(branch, masterId, count = 3, service = null) {
 	const schedule = branch?.schedule ?? {}
 	const now = Date.now()
 	for (const date of Object.keys(schedule).sort()) {
-		const times = scheduleSlots(branch, masterId, date, service).filter(
-			(time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS,
+		const times = scheduleSlots(branch, masterId, date, service).filter((time) =>
+			notPassed(date, time, now),
 		)
 		if (times.length) return { date, times: times.slice(0, count) }
 	}
