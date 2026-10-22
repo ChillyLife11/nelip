@@ -33,7 +33,7 @@ import {
 	loadedBranch,
 	nearestSlots,
 	scheduleDates,
-	scheduleSlots,
+	slotGrid,
 	shortAddress,
 } from '@/api/branches'
 import { apiErrorMessage } from '@/api/http'
@@ -132,18 +132,15 @@ const minuteOf = (t) => Number(t.split(':')[1])
 // другого только 15:30 и 16:30, а маммография идёт до 18:00. Занят ли конкретный час, всё равно проверит бэкенд при создании.
 const hours = computed(() =>
 	selectedDate.value
-		? scheduleSlots(
-				branch.value,
-				masterId.value,
-				selectedDate.value.toString(),
-				chosenService.value,
-			)
+		? slotGrid(branch.value, masterId.value, selectedDate.value.toString(), chosenService.value)
 		: [],
 )
 
 const visibleTimes = computed(() => {
 	const period = periods.find((p) => p.label === selectedPeriod.value)
-	return hours.value.filter((t) => hourOf(t) >= period.from && hourOf(t) < period.to)
+	return hours.value.filter(
+		(slot) => hourOf(slot.time) >= period.from && hourOf(slot.time) < period.to,
+	)
 })
 
 // Прошедшие часы показываем, но выбрать их нельзя (кнопки disabled). Запаса
@@ -170,20 +167,27 @@ function slotAt(dateValue, slot) {
 	)
 }
 
-function isTooSoon(slot) {
+function isTooSoon(time) {
 	if (!selectedDate.value) return true
-	return slotAt(selectedDate.value, slot) - now.value < LEAD_MS
+	return slotAt(selectedDate.value, time) - now.value < LEAD_MS
 }
 
+// Выбрать можно свободный слот, который ещё не прошёл. Занятые в сетке
+// остаются, но серыми — см. slotGrid в @/api/branches.
+const canPick = (slot) => slot.free && !isTooSoon(slot.time)
+
 // Слоты, которые реально можно выбрать — из них берём автовыбор.
-const availableTimes = computed(() => visibleTimes.value.filter((t) => !isTooSoon(t)))
+const availableTimes = computed(() => visibleTimes.value.filter(canPick).map((s) => s.time))
 
 // Если в первой половине дня выбирать уже нечего (всё прошло), сразу открываем
 // период, где есть свободный слот — иначе пользователь упирается в сетку,
 // где всё заблокировано.
 function showPeriodWithFreeSlot() {
 	const inPeriod = (period) =>
-		hours.value.some((t) => hourOf(t) >= period.from && hourOf(t) < period.to && !isTooSoon(t))
+		hours.value.some(
+			(slot) =>
+				hourOf(slot.time) >= period.from && hourOf(slot.time) < period.to && canPick(slot),
+		)
 	if (inPeriod(periods.find((p) => p.label === selectedPeriod.value))) return
 	selectedPeriod.value = (periods.find(inPeriod) ?? periods[0]).label
 }
@@ -398,21 +402,25 @@ async function submit() {
 					На этот день свободного времени больше нет — выберите другой.
 				</div>
 
+				<!-- Занятые слоты не прячем, а показываем серыми: пустая сетка
+				     читается как поломка. Серый — это и занято, и уже прошло. -->
 				<div class="grid grid-cols-4 gap-2.5">
 					<button
 						v-for="slot in visibleTimes"
-						:key="slot"
+						:key="slot.time"
 						type="button"
-						:disabled="isTooSoon(slot)"
+						:disabled="!canPick(slot)"
 						:class="
-							selectedTime === slot
+							selectedTime === slot.time
 								? 'bg-brand text-white'
-								: 'border border-brand text-brand'
+								: canPick(slot)
+									? 'border border-brand text-brand'
+									: 'border border-secondary-soft bg-secondary-soft text-gray'
 						"
-						class="flex items-center justify-center min-h-8.5 py-1 px-2 rounded-control text-13 duration-40 active:scale-[0.984] disabled:opacity-40 disabled:pointer-events-none"
-						@click="selectedTime = slot"
+						class="flex items-center justify-center min-h-8.5 py-1 px-2 rounded-control text-13 duration-40 active:scale-[0.984] disabled:pointer-events-none"
+						@click="selectedTime = slot.time"
 					>
-						{{ slot }}
+						{{ slot.time }}
 					</button>
 				</div>
 			</div>

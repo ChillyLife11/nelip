@@ -1,5 +1,6 @@
 import { api } from '@/api/http'
 import { COMPANY_ID } from '@/config'
+import { fullNameOf } from '@/api/coworkers'
 import { LEAD_MS } from '@/composables/useBooking'
 
 // Филиалы клиники. Требует авторизации (Bearer).
@@ -104,7 +105,7 @@ export function loadedBranchesWithService(serviceId) {
 // Рабочий день клиники — с 10:00 до 17:00, а расписание бэкенд отдаёт шире (с
 // утра и до 22:00), поэтому лишние слоты режем у себя. DAY_END — это закрытие, а
 // не последний слот: старт в 17:00 не предлагаем, а приём, начатый раньше,
-// должен уложиться до него. Длительность при этом проверяет fitSlots — ему нужны
+// должен уложиться до него. Длительность при этом проверяет slotGrid — ему нужны
 // свободные слоты на весь приём, а за границей дня их просто нет, поэтому старты
 // у края дня остаются только для коротких услуг.
 // Ограничение общее для всего приложения — и для сетки времени, и для ближайших
@@ -137,16 +138,42 @@ export function serviceDayEnd(service) {
 // объектом { "1": "11:00", "3": "13:00" } — это PHP отдаёт разреженный массив
 // (после занятых слотов индексы идут с пропусками) объектом, а не списком.
 // Приводим оба вида к массиву времён и оставляем только рабочий день.
-function timeList(slots, dayEnd = DAY_END_MINUTES) {
-	const list = Array.isArray(slots)
+function rawList(slots) {
+	return Array.isArray(slots)
 		? slots
 		: slots && typeof slots === 'object'
 			? Object.values(slots)
 			: []
-	return list.filter((time) => {
+}
+
+function timeList(slots, window = { start: DAY_START_MINUTES, end: DAY_END_MINUTES }) {
+	return rawList(slots).filter((time) => {
 		const minutes = minutesOf(time)
-		return minutes !== null && minutes >= DAY_START_MINUTES && minutes < dayEnd
+		return minutes !== null && minutes >= window.start && minutes < window.end
 	})
+}
+
+// Персональные часы врача: у части врачей день уже общего. Ключ — имя, а не id:
+// id в базе клиники уже менялся при переносе карточек, а имя клиника называет
+// сама. Если врача в списке нет, действуют общие часы.
+const DOCTOR_HOURS = [{ match: /нелип\s+владимир/i, start: '10:30', end: '17:00' }]
+
+function masterRule(branch, masterId) {
+	if (masterId === null || masterId === undefined) return null
+	const master = (branch?.coworkers ?? []).find((c) => c.id === masterId)
+	if (!master) return null
+	const name = fullNameOf(master.profile ?? master)
+	return DOCTOR_HOURS.find((rule) => rule.match.test(name)) ?? null
+}
+
+// Окно приёма на день: общий рабочий день, суженный услугой (маммография идёт
+// до 18:00) и персональными часами врача. Берём самое узкое из правил.
+function dayWindow(branch, masterId, service) {
+	const rule = masterRule(branch, masterId)
+	return {
+		start: Math.max(DAY_START_MINUTES, rule ? minutesOf(rule.start) : 0),
+		end: Math.min(serviceDayEnd(service), rule ? minutesOf(rule.end) : Infinity),
+	}
 }
 
 // Воскресенье и понедельник в клинике не принимают. Бэкенд эти дни в расписании
@@ -179,13 +206,13 @@ function bySchedule(branch, date) {
 // Врача учитываем: в один и тот же день в филиале принимают не все.
 export function scheduleDates(branch, masterId = null, service = null) {
 	const schedule = branch?.schedule ?? {}
-	const dayEnd = serviceDayEnd(service)
+	const window = dayWindow(branch, masterId, service)
 	const open = Object.keys(schedule).filter((date) => {
 		if (!isWorkday(date)) return false
 		const byMaster = bySchedule(branch, date)
 		return masterId === null
-			? Object.values(byMaster).some((slots) => timeList(slots, dayEnd).length)
-			: timeList(byMaster[masterId], dayEnd).length > 0
+			? Object.values(byMaster).some((slots) => timeList(slots, window).length)
+			: timeList(byMaster[masterId], window).length > 0
 	})
 	return new Set(open)
 }
@@ -235,7 +262,20 @@ const minutesOfTime = (time) => {
 }
 
 // Шаг сетки берём из самих данных: бэкенд отдаёт слоты по 10 минут, но раньше
-// были часовые, и жёсткое число сломалось бы при следующей смене.
+// были часовые, и жёсткое число сломалось бы при следующей смене. Считаем по
+// всем врачам дня: у одного врача свободного времени может остаться слишком
+// мало, чтобы зазор был виден.
+function dayStep(byMaster) {
+	const all = new Set()
+	for (const slots of Object.values(byMaster)) {
+		for (const time of rawList(slots)) {
+			const minutes = minutesOfTime(time)
+			if (minutes !== null) all.add(minutes)
+		}
+	}
+	return stepOf([...all].sort((a, b) => a - b))
+}
+
 function stepOf(minutes) {
 	let step = Infinity
 	for (let i = 1; i < minutes.length; i += 1) {
@@ -245,50 +285,49 @@ function stepOf(minutes) {
 	return Number.isFinite(step) ? step : 10
 }
 
-// Старты, на которые приём нужной длительности влезает целиком и не наезжает на
-// соседний. Слоты приходят по 10 минут, а приём занимает 20-40 — значит часть
-// стартов показывать нельзя: при длительности 20 минут из
-// [10:00, 10:10, 10:20, 10:30, 10:40] остаются только 10:00 и 10:20
-// (10:40 отпадает — под него нужен ещё свободный 10:50).
-export function fitSlots(times, minutes = DEFAULT_MINUTES) {
-	const list = [...new Set(times.map(minutesOfTime).filter((m) => m !== null))].sort(
-		(a, b) => a - b,
-	)
-	if (!list.length) return []
-	const step = stepOf(list)
-	const free = new Set(list)
+// Сетка стартов на день: каждый старт помечен, свободен он или занят. Занятые
+// показываем серыми — пустой экран читается как поломка, а серая сетка сразу
+// говорит, что врач в этот день занят (просьба клиники 22.10.2026).
+//
+// Расписание с бэкенда — это **свободное** время по десять минут. Значит старт
+// свободен, когда свободны все слоты, которые займёт приём: при длительности 20
+// минут старту 10:00 нужны и 10:00, и 10:10.
+//
+// Сетку строим от начала рабочего окна с шагом в длительность, а не от первого
+// свободного слота: иначе при каждой новой записи соседние старты съезжали бы, и
+// человек видел бы разное время на одном и том же дне.
+export function slotGrid(branch, masterId, date, service = null) {
+	if (!isWorkday(date)) return []
+	const window = dayWindow(branch, masterId, service)
+	const minutes = serviceMinutes(service)
+	const byMaster = bySchedule(branch, date)
+	const step = dayStep(byMaster)
 	const need = Math.max(1, Math.ceil(minutes / step))
 
-	const fits = (start) => {
-		for (let i = 0; i < need; i += 1) if (!free.has(start + i * step)) return false
-		return true
-	}
+	const slots =
+		masterId === null || masterId === undefined
+			? Object.values(byMaster).flatMap(rawList)
+			: rawList(byMaster[masterId])
+	const free = new Set(slots.map(minutesOfTime).filter((m) => m !== null))
 
 	const pad = (n) => String(n).padStart(2, '0')
 	const out = []
-	let busyUntil = -Infinity
-	for (const start of list) {
-		if (start < busyUntil || !fits(start)) continue
-		out.push(`${pad(Math.floor(start / 60))}:${pad(start % 60)}`)
-		busyUntil = start + need * step
+	for (let begin = window.start; begin + minutes <= window.end; begin += need * step) {
+		let open = true
+		for (let i = 0; i < need && open; i += 1) open = free.has(begin + i * step)
+		out.push({ time: `${pad(Math.floor(begin / 60))}:${pad(begin % 60)}`, free: open })
 	}
 	return out
 }
 
-// Часы врача на конкретный день — сетка времени на последнем шаге записи.
+// Часы врача на конкретный день — только свободные. Сетку строит slotGrid,
+// здесь остаётся фильтр: так экран времени и карточка врача считают одинаково.
 // masterId === null: объединяем часы всех врачей филиала (тот же режим, что и
 // у scheduleDates), иначе берём только выбранного.
 export function scheduleSlots(branch, masterId, date, service = null) {
-	if (!isWorkday(date)) return []
-	const dayEnd = serviceDayEnd(service)
-	const minutes = serviceMinutes(service)
-	const byMaster = bySchedule(branch, date)
-	if (masterId !== null && masterId !== undefined)
-		return fitSlots(timeList(byMaster[masterId], dayEnd), minutes)
-	const all = new Set()
-	for (const slots of Object.values(byMaster))
-		for (const time of timeList(slots, dayEnd)) all.add(time)
-	return fitSlots([...all], minutes)
+	return slotGrid(branch, masterId, date, service)
+		.filter((slot) => slot.free)
+		.map((slot) => slot.time)
 }
 
 // Ближайшие свободные часы врача — для карточки на экране выбора врача.
@@ -296,15 +335,11 @@ export function scheduleSlots(branch, masterId, date, service = null) {
 // время: прошедшие часы не в счёт, как и на экране выбора времени (LEAD_MS).
 export function nearestSlots(branch, masterId, count = 3, service = null) {
 	const schedule = branch?.schedule ?? {}
-	const dayEnd = serviceDayEnd(service)
-	const minutes = serviceMinutes(service)
 	const now = Date.now()
 	for (const date of Object.keys(schedule).sort()) {
-		if (!isWorkday(date)) continue
-		const times = fitSlots(
-			timeList(bySchedule(branch, date)[masterId], dayEnd),
-			minutes,
-		).filter((time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS)
+		const times = scheduleSlots(branch, masterId, date, service).filter(
+			(time) => new Date(`${date}T${time}`).getTime() - now >= LEAD_MS,
+		)
 		if (times.length) return { date, times: times.slice(0, count) }
 	}
 	return null
