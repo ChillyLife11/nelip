@@ -136,15 +136,18 @@ const hours = computed(() =>
 		: [],
 )
 
+// В сетке только то, что можно выбрать: занятые и уже прошедшие слоты не
+// показываем вовсе (просьба клиники 23.10.2026; до этого они были серыми).
 const visibleTimes = computed(() => {
 	const period = periods.find((p) => p.label === selectedPeriod.value)
 	return hours.value.filter(
-		(slot) => hourOf(slot.time) >= period.from && hourOf(slot.time) < period.to,
+		(slot) =>
+			hourOf(slot.time) >= period.from && hourOf(slot.time) < period.to && canPick(slot),
 	)
 })
 
-// Прошедшие часы показываем, но выбрать их нельзя (кнопки disabled). Запаса
-// перед ближайшей записью больше нет — LEAD_MS равен нулю, см. useBooking.
+// Прошедшие часы в сетку не попадают (см. canPick ниже). Запаса перед
+// ближайшей записью нет — LEAD_MS равен нулю, см. useBooking.
 // На другие дни ограничение не действует — там доступны все часы.
 
 // «Сейчас» подтягиваем раз в минуту — экран может быть открыт долго, и граница
@@ -172,12 +175,19 @@ function isTooSoon(time) {
 	return slotAt(selectedDate.value, time) - now.value < LEAD_MS
 }
 
-// Выбрать можно свободный слот, который ещё не прошёл. Занятые в сетке
-// остаются, но серыми — см. slotGrid в @/api/branches.
-const canPick = (slot) => slot.free && !isTooSoon(slot.time)
+// Выбрать можно свободный слот, который ещё не прошёл — см. slotGrid в
+// @/api/branches. Объявлена функцией, а не стрелкой: visibleTimes выше по коду
+// ссылается на неё, и всплытие тут нужно.
+function canPick(slot) {
+	return slot.free && !isTooSoon(slot.time)
+}
 
-// Слоты, которые реально можно выбрать — из них берём автовыбор.
-const availableTimes = computed(() => visibleTimes.value.filter(canPick).map((s) => s.time))
+// Слоты, которые можно выбрать в текущей половине дня — из них берём автовыбор.
+const availableTimes = computed(() => visibleTimes.value.map((slot) => slot.time))
+
+// Есть ли что выбрать хотя бы в другой половине дня: от этого зависит, что
+// написать под пустой сеткой.
+const dayHasFree = computed(() => hours.value.some(canPick))
 
 // Если в первой половине дня выбирать уже нечего (всё прошло), сразу открываем
 // период, где есть свободный слот — иначе пользователь упирается в сетку,
@@ -399,25 +409,25 @@ async function submit() {
 				</div>
 
 				<div v-if="!availableTimes.length" class="py-2 text-13 text-center text-gray">
-					На этот день свободного времени больше нет — выберите другой.
+					{{
+						dayHasFree
+							? 'В это время свободных слотов нет — выберите другую половину дня.'
+							: 'На этот день свободного времени больше нет — выберите другой.'
+					}}
 				</div>
 
-				<!-- Занятые слоты не прячем, а показываем серыми: пустая сетка
-				     читается как поломка. Серый — это и занято, и уже прошло. -->
+				<!-- Только доступные слоты: занятые и прошедшие не показываем. -->
 				<div class="grid grid-cols-4 gap-2.5">
 					<button
 						v-for="slot in visibleTimes"
 						:key="slot.time"
 						type="button"
-						:disabled="!canPick(slot)"
 						:class="
 							selectedTime === slot.time
 								? 'bg-brand text-white'
-								: canPick(slot)
-									? 'border border-brand text-brand'
-									: 'border border-secondary-soft bg-secondary-soft text-gray'
+								: 'border border-brand text-brand'
 						"
-						class="flex items-center justify-center min-h-8.5 py-1 px-2 rounded-control text-13 duration-40 active:scale-[0.984] disabled:pointer-events-none"
+						class="flex items-center justify-center min-h-8.5 py-1 px-2 rounded-control text-13 duration-40 active:scale-[0.984]"
 						@click="selectedTime = slot.time"
 					>
 						{{ slot.time }}

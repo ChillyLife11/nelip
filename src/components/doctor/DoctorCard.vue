@@ -35,6 +35,9 @@ defineProps({
 			<div v-if="date" class="pt-1.5 text-12 text-brand whitespace-nowrap">
 				Ближайшая запись: <span class="font-bold">{{ date }}</span>
 			</div>
+			<!-- Ни одного свободного дня в расписании — говорим прямо, иначе
+			     карточка без строки и слотов выглядит недогруженной. -->
+			<div v-else class="pt-1.5 text-12 text-gray">Ближайших дат для записи нет.</div>
 			<div v-if="times.length" class="flex flex-wrap gap-[5px] pt-2">
 				<span
 					v-for="(time, index) in times"
