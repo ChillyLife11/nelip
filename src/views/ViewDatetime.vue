@@ -38,10 +38,23 @@ import {
 } from '@/api/branches'
 import { apiErrorMessage } from '@/api/http'
 import { LEAD_MS, useBooking } from '@/composables/useBooking'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { branchId, serviceId, masterId, date, time, reset, appointmentPayload, isComplete } =
-	useBooking()
+const {
+	branchId,
+	serviceId,
+	masterId,
+	date,
+	time,
+	reset,
+	appointmentPayload,
+	isComplete,
+	patient,
+	patientReady,
+	fillPatient,
+} = useBooking()
+const { clientNameParts } = useAuth()
 
 // Записаться можно только начиная с сегодняшнего дня.
 const minDate = today(getLocalTimeZone())
@@ -252,6 +265,8 @@ function review() {
 	if (!selectedDate.value || !selectedTime.value) return
 	date.value = selectedDate.value.toString()
 	time.value = selectedTime.value
+	// ФИО подставляем из карточки клиента, если человек его ещё не вводил.
+	fillPatient(clientNameParts.value)
 	saveError.value = ''
 	confirming.value = true
 }
@@ -282,6 +297,10 @@ const success = ref(false)
 // Финал флоу: фиксируем выбор и создаём запись. При успехе состояние сбрасываем,
 // чтобы следующая запись начиналась с чистого листа.
 async function submit() {
+	if (!patientReady()) {
+		saveError.value = 'Укажите фамилию и имя.'
+		return
+	}
 	if (!isComplete()) {
 		saveError.value = 'Не хватает данных для записи — пройдите шаги заново.'
 		return
@@ -447,6 +466,9 @@ async function submit() {
 
 		<BookingConfirm
 			v-model:open="confirming"
+			v-model:last-name="patient.lastName"
+			v-model:first-name="patient.firstName"
+			v-model:middle-name="patient.middleName"
 			:rows="summary"
 			:saving="saving"
 			:error="saveError"

@@ -19,6 +19,30 @@ const masterId = ref(null)
 const date = ref(null)
 const time = ref(null)
 
+// ФИО пациента для записи — заполняется в окне подтверждения (обязательны
+// фамилия и имя). Живёт отдельно от выбора шагов и reset() его не трогает: это
+// данные о человеке, а не о конкретной записи, и при следующей записи их не
+// нужно вводить заново.
+const patient = ref({ lastName: '', firstName: '', middleName: '' })
+
+const clean = (value) => String(value ?? '').trim()
+
+function patientReady() {
+	return Boolean(clean(patient.value.lastName) && clean(patient.value.firstName))
+}
+
+// Подставить ФИО, если пациент его ещё не вводил. Источник выбирает вызывающий
+// (см. clientNameParts в @/composables/useAuth).
+function fillPatient(parts = {}) {
+	const current = patient.value
+	if (clean(current.lastName) || clean(current.firstName) || clean(current.middleName)) return
+	patient.value = {
+		lastName: clean(parts.lastName),
+		firstName: clean(parts.firstName),
+		middleName: clean(parts.middleName),
+	}
+}
+
 function reset() {
 	branchId.value = null
 	serviceId.value = null
@@ -82,6 +106,14 @@ function appointmentPayload() {
 		status: 0,
 		services: serviceId.value ? [serviceId.value] : [],
 		source: 'max',
+		// ⚠️ Порядок полей — как в описании метода от бэкенда (28.10.2026):
+		// first_name — ФАМИЛИЯ, last_name — ИМЯ. У врачей в /branch/index те же
+		// поля названы наоборот (first_name — имя), так что это не опечатка
+		// здесь, а договорённость для appointment/create. Если в карточке клиента
+		// фамилия и имя окажутся переставлены — менять эти две строки.
+		first_name: clean(patient.value.lastName),
+		last_name: clean(patient.value.firstName),
+		second_name: clean(patient.value.middleName),
 	}
 }
 
@@ -93,7 +125,8 @@ function isComplete() {
 		serviceId.value &&
 		masterId.value &&
 		date.value &&
-		time.value,
+		time.value &&
+		patientReady(),
 	)
 }
 
@@ -109,5 +142,8 @@ export function useBooking() {
 		reset,
 		appointmentPayload,
 		isComplete,
+		patient,
+		patientReady,
+		fillPatient,
 	}
 }

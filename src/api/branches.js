@@ -149,24 +149,37 @@ function rawList(slots) {
 // Персональные часы врача: у части врачей день уже общего. Ключ — имя, а не id:
 // id в базе клиники уже менялся при переносе карточек, а имя клиника называет
 // сама. Если врача в списке нет, действуют общие часы.
-const DOCTOR_HOURS = [{ match: /нелип\s+владимир/i, start: '10:30', end: '17:00' }]
+// `weekdays` — дни недели, к которым правило относится (0 воскресенье … 6
+// суббота); без него правило действует каждый день. `start`/`end` можно задать
+// по отдельности — чего нет, берётся из общих часов.
+const DOCTOR_HOURS = [
+	{ match: /нелип\s+владимир/i, start: '10:30', end: '17:00' },
+	// По субботам Константин начинает позже (просьба клиники 28.10.2026).
+	{ match: /нелип\s+константин/i, weekdays: [6], start: '10:40' },
+]
 
-function masterRule(branch, masterId) {
-	if (masterId === null || masterId === undefined) return null
+function masterRules(branch, masterId, date) {
+	if (masterId === null || masterId === undefined) return []
 	const master = (branch?.coworkers ?? []).find((c) => c.id === masterId)
-	if (!master) return null
+	if (!master) return []
 	const name = fullNameOf(master.profile ?? master)
-	return DOCTOR_HOURS.find((rule) => rule.match.test(name)) ?? null
+	const weekday = weekdayOf(date)
+	return DOCTOR_HOURS.filter(
+		(rule) => rule.match.test(name) && (!rule.weekdays || rule.weekdays.includes(weekday)),
+	)
 }
 
 // Окно приёма на день: общий рабочий день, суженный услугой (маммография идёт
-// до 18:00) и персональными часами врача. Берём самое узкое из правил.
-function dayWindow(branch, masterId, service) {
-	const rule = masterRule(branch, masterId)
-	return {
-		start: Math.max(DAY_START_MINUTES, rule ? minutesOf(rule.start) : 0),
-		end: Math.min(serviceDayEnd(service), rule ? minutesOf(rule.end) : Infinity),
+// до 18:00) и персональными часами врача на этот день недели. Берём самое узкое
+// из всех правил.
+function dayWindow(branch, masterId, service, date) {
+	let start = DAY_START_MINUTES
+	let end = serviceDayEnd(service)
+	for (const rule of masterRules(branch, masterId, date)) {
+		if (rule.start) start = Math.max(start, minutesOf(rule.start))
+		if (rule.end) end = Math.min(end, minutesOf(rule.end))
 	}
+	return { start, end }
 }
 
 // Воскресенье и понедельник в клинике не принимают. Бэкенд эти дни в расписании
@@ -179,10 +192,15 @@ const WEEKEND_WEEKDAYS = new Set([0, 1])
 
 // Дату разбираем вручную: new Date('2026-10-18') — это UTC-полночь, и в часовом
 // поясе клиники (+8) getDay() отдал бы предыдущий день.
-function isWorkday(date) {
+function weekdayOf(date) {
 	const [year, month, day] = String(date).split('-').map(Number)
-	if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return true
-	return !WEEKEND_WEEKDAYS.has(new Date(year, month - 1, day).getDay())
+	if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null
+	return new Date(year, month - 1, day).getDay()
+}
+
+function isWorkday(date) {
+	const weekday = weekdayOf(date)
+	return weekday === null || !WEEKEND_WEEKDAYS.has(weekday)
 }
 
 // Врачи филиала на дату: { "<id врача>": часы }. День без приёма приходит
@@ -303,7 +321,7 @@ function stepOf(minutes) {
 // человек видел бы разное время на одном и том же дне.
 export function slotGrid(branch, masterId, date, service = null) {
 	if (!isWorkday(date)) return []
-	const window = dayWindow(branch, masterId, service)
+	const window = dayWindow(branch, masterId, service, date)
 	const minutes = serviceMinutes(service)
 	const byMaster = bySchedule(branch, date)
 	const step = dayStep(byMaster)
