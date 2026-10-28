@@ -3,7 +3,7 @@
 // и даёт вернуться к любому шагу — иконкой рядом со строкой. Первой строкой —
 // ФИО пациента, его можно поправить прямо здесь. Саму запись создаёт уже
 // родитель по событию confirm.
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle } from 'reka-ui'
 import { Settings2, X } from '@lucide/vue'
 import UiBtn from '@/components/ui/UiBtn.vue'
@@ -17,6 +17,32 @@ const firstName = defineModel('firstName', { type: String, default: '' })
 const middleName = defineModel('middleName', { type: String, default: '' })
 
 const nameReady = computed(() => Boolean(lastName.value.trim() && firstName.value.trim()))
+
+// Кнопка подтверждения всегда активна (просьба клиники 28.10.2026): по нажатию
+// проверяем обязательные поля, подсвечиваем незаполненные красным с подписью
+// под полем и прокручиваем окно к первому из них. До первого нажатия ошибок не
+// показываем — пустое поле при открытии окна ещё не ошибка.
+const showErrors = ref(false)
+const errors = computed(() => ({
+	lastName: showErrors.value && !lastName.value.trim() ? 'Укажите фамилию' : '',
+	firstName: showErrors.value && !firstName.value.trim() ? 'Укажите имя' : '',
+}))
+
+// Поля в порядке на экране — к первому незаполненному и прокручиваем.
+const lastNameInput = ref(null)
+const firstNameInput = ref(null)
+
+async function confirm() {
+	if (nameReady.value) {
+		emit('confirm')
+		return
+	}
+	showErrors.value = true
+	editingName.value = true
+	await nextTick()
+	const target = !lastName.value.trim() ? lastNameInput.value : firstNameInput.value
+	target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
 const fullName = computed(() =>
 	[lastName.value, firstName.value, middleName.value]
 		.map((part) => part.trim())
@@ -31,7 +57,9 @@ const editingName = ref(false)
 watch(
 	open,
 	(isOpen) => {
-		if (isOpen) editingName.value = !nameReady.value
+		if (!isOpen) return
+		editingName.value = !nameReady.value
+		showErrors.value = false
 	},
 	{ immediate: true },
 )
@@ -92,20 +120,44 @@ const emit = defineEmits(['confirm', 'cancel', 'edit'])
 							</button>
 						</dd>
 						<dd v-else class="mt-2 space-y-2">
-							<input
-								v-model="lastName"
-								type="text"
-								autocomplete="family-name"
-								placeholder="Фамилия *"
-								class="block w-full py-2.5 px-4 rounded-control border border-secondary-soft bg-card-darker text-15 text-gray outline-none focus:border-brand placeholder:text-gray/50"
-							/>
-							<input
-								v-model="firstName"
-								type="text"
-								autocomplete="given-name"
-								placeholder="Имя *"
-								class="block w-full py-2.5 px-4 rounded-control border border-secondary-soft bg-card-darker text-15 text-gray outline-none focus:border-brand placeholder:text-gray/50"
-							/>
+							<div>
+								<input
+									ref="lastNameInput"
+									v-model="lastName"
+									type="text"
+									autocomplete="family-name"
+									placeholder="Фамилия *"
+									:aria-invalid="Boolean(errors.lastName)"
+									:class="
+										errors.lastName
+											? 'border-danger'
+											: 'border-secondary-soft focus:border-brand'
+									"
+									class="block w-full py-2.5 px-4 rounded-control border bg-card-darker text-15 text-gray outline-none placeholder:text-gray/50"
+								/>
+								<p v-if="errors.lastName" class="mt-1 px-1 text-12 text-danger">
+									{{ errors.lastName }}
+								</p>
+							</div>
+							<div>
+								<input
+									ref="firstNameInput"
+									v-model="firstName"
+									type="text"
+									autocomplete="given-name"
+									placeholder="Имя *"
+									:aria-invalid="Boolean(errors.firstName)"
+									:class="
+										errors.firstName
+											? 'border-danger'
+											: 'border-secondary-soft focus:border-brand'
+									"
+									class="block w-full py-2.5 px-4 rounded-control border bg-card-darker text-15 text-gray outline-none placeholder:text-gray/50"
+								/>
+								<p v-if="errors.firstName" class="mt-1 px-1 text-12 text-danger">
+									{{ errors.firstName }}
+								</p>
+							</div>
 							<input
 								v-model="middleName"
 								type="text"
@@ -113,9 +165,6 @@ const emit = defineEmits(['confirm', 'cancel', 'edit'])
 								placeholder="Отчество"
 								class="block w-full py-2.5 px-4 rounded-control border border-secondary-soft bg-card-darker text-15 text-gray outline-none focus:border-brand placeholder:text-gray/50"
 							/>
-							<p v-if="!nameReady" class="text-13 text-gray/70">
-								Укажите фамилию и имя — без них запись не создать.
-							</p>
 						</dd>
 					</div>
 					<div v-for="row in rows" :key="row.label">
@@ -138,7 +187,7 @@ const emit = defineEmits(['confirm', 'cancel', 'edit'])
 				<p v-if="error" class="mt-4 text-13 text-center text-gray">{{ error }}</p>
 
 				<div class="mt-8 space-y-2.5">
-					<UiBtn fluid :disabled="saving || !nameReady" @click="emit('confirm')">
+					<UiBtn fluid :disabled="saving" @click="confirm">
 						{{ saving ? 'Записываем…' : 'Подтвердить запись' }}
 					</UiBtn>
 					<UiBtn color="secondary" soft fluid :disabled="saving" @click="emit('cancel')">
