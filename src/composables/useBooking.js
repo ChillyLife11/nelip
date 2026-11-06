@@ -106,13 +106,9 @@ function appointmentPayload() {
 		status: 0,
 		services: serviceId.value ? [serviceId.value] : [],
 		source: 'max',
-		// ⚠️ Порядок полей — как в описании метода от бэкенда (28.10.2026):
-		// first_name — ФАМИЛИЯ, last_name — ИМЯ. У врачей в /branch/index те же
-		// поля названы наоборот (first_name — имя), так что это не опечатка
-		// здесь, а договорённость для appointment/create. Если в карточке клиента
-		// фамилия и имя окажутся переставлены — менять эти две строки.
-		first_name: clean(patient.value.lastName),
-		last_name: clean(patient.value.firstName),
+		// API сохраняет поля напрямую в профиль: first_name — имя, last_name — фамилия.
+		first_name: clean(patient.value.firstName),
+		last_name: clean(patient.value.lastName),
 		second_name: clean(patient.value.middleName),
 	}
 }
