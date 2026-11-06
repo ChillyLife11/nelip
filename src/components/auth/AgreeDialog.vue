@@ -10,13 +10,16 @@ import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle } f
 import { ExternalLink } from '@lucide/vue'
 import UiBtn from '@/components/ui/UiBtn.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useLegalConsent } from '@/composables/useLegalConsent'
 import { useMessenger } from '@/composables/useMessenger'
 import { DOCS, FALLBACK_PHONE } from '@/config'
 
 const open = defineModel('open', { type: Boolean, default: false })
 const emit = defineEmits(['signed'])
 
-const { signIn } = useAuth()
+const { signIn, token } = useAuth()
+const consent = useLegalConsent()
+const legalAccepted = ref(consent.accepted())
 const { isMax, requestPhone, openLink } = useMessenger()
 
 // Текст под кнопкой, если номер получить не удалось. Отказ — не ошибка
@@ -31,11 +34,9 @@ const PHONE_ERRORS = {
 const submitting = ref(false)
 const error = ref('')
 
-// Обе отметки обязательны: кнопка заблокирована, пока не стоят обе (решение
-// заказчика — в medix рассылка вход не держала). Политика отмечена по
-// умолчанию, рассылку человек ставит сам.
-const policy_read = ref(true)
-const marketing_agree = ref(false)
+// Legal acceptance is independent of the authenticated session.
+const policy_read = ref(legalAccepted.value)
+const marketing_agree = ref(legalAccepted.value)
 const agreed = computed(() => policy_read.value && marketing_agree.value)
 
 // Номер спрашиваем у мессенджера — окно и открыто как раз для того, чтобы
@@ -56,6 +57,15 @@ async function submit() {
 	submitting.value = true
 	error.value = ''
 	try {
+		if (!consent.save(policy_read.value, marketing_agree.value)) {
+			error.value = 'Не удалось сохранить согласия. Проверьте доступ к хранилищу приложения.'
+			return
+		}
+		legalAccepted.value = true
+		if (token.value) {
+			emit('signed')
+			return
+		}
 		const { phone, reason } = await requestPhone()
 		const userPhone = phone ?? (isMax ? null : FALLBACK_PHONE)
 		if (!userPhone) {
@@ -88,10 +98,11 @@ async function submit() {
 				@interact-outside.prevent
 			>
 				<DialogTitle class="max-w-65 text-center text-base font-normal leading-[1.2]">
-					Продолжая, Вы даете согласие на обработку персональных данных:
+					<span v-if="legalAccepted">Поделитесь номером телефона, чтобы войти</span>
+					<span v-else>Продолжая, Вы даете согласие на обработку персональных данных:</span>
 				</DialogTitle>
 
-				<div class="w-full mt-4 space-y-2.5 leading-[1.2] text-gray">
+				<div v-if="!legalAccepted" class="w-full mt-4 space-y-2.5 leading-[1.2] text-gray">
 					<label class="flex items-start">
 						<input v-model="policy_read" type="checkbox" class="peer" hidden />
 						<span
@@ -141,7 +152,7 @@ async function submit() {
 				<div v-if="error" class="mt-5 text-13 text-center text-gray">{{ error }}</div>
 
 				<UiBtn :disabled="submitting || !agreed" round class="w-43 mt-5" @click="submit">
-					{{ submitting ? 'Проверяем…' : 'Продолжить' }}
+					{{ submitting ? 'Проверяем…' : 'Отправить' }}
 				</UiBtn>
 			</DialogContent>
 		</DialogPortal>
