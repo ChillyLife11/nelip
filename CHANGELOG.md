@@ -5,6 +5,13 @@
 Формат — [Keep a Changelog 1.0.0](https://keepachangelog.com/en/1.0.0/),
 версионирование — [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.3] - 2026-11-19
+
+### Changed
+
+- Логотип сплэша подгружается заранее (`<link rel="preload">` в `index.html`):
+  запрос уходит вместе с JS, а не после монтирования приложения.
+
 ## [0.21.2] - 2026-11-18
 
 ### Changed
