@@ -8,10 +8,11 @@
 //   master_id — id врача (из /coworker/index)
 //   branch_id — id филиала (из /branch/index)
 
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { COMPANY_ID } from '@/config'
 import { clientId } from '@/session'
 import { branchServices, dropBranches, loadedBranch, serviceMinutes } from '@/api/branches'
+import { validPatientPhone } from '@/api/patientBooking'
 
 const branchId = ref(null)
 const serviceId = ref(null)
@@ -20,23 +21,29 @@ const date = ref(null)
 const time = ref(null)
 
 // ФИО пациента для записи — заполняется в окне подтверждения (обязательны
-// фамилия и имя). Живёт отдельно от выбора шагов и reset() его не трогает: это
-// данные о человеке, а не о конкретной записи, и при следующей записи их не
-// нужно вводить заново.
-const patient = ref({ lastName: '', firstName: '', middleName: '' })
+// фамилия и имя). ФИО владельца сохраняется между записями; данные другого
+// пациента хранятся отдельно и очищаются при старте новой записи.
+const ownPatient = ref({ lastName: '', firstName: '', middleName: '' })
+const otherPerson = ref(false)
+const otherPatient = ref({ lastName: '', firstName: '', middleName: '', phone: '' })
+const patient = computed(() => (otherPerson.value ? otherPatient.value : ownPatient.value))
 
 const clean = (value) => String(value ?? '').trim()
 
 function patientReady() {
-	return Boolean(clean(patient.value.lastName) && clean(patient.value.firstName))
+	return Boolean(
+		clean(patient.value.lastName) &&
+		clean(patient.value.firstName) &&
+		(!otherPerson.value || validPatientPhone(patient.value.phone)),
+	)
 }
 
 // Подставить ФИО, если пациент его ещё не вводил. Источник выбирает вызывающий
 // (см. clientNameParts в @/composables/useAuth).
 function fillPatient(parts = {}) {
-	const current = patient.value
+	const current = ownPatient.value
 	if (clean(current.lastName) || clean(current.firstName) || clean(current.middleName)) return
-	patient.value = {
+	ownPatient.value = {
 		lastName: clean(parts.lastName),
 		firstName: clean(parts.firstName),
 		middleName: clean(parts.middleName),
@@ -44,6 +51,8 @@ function fillPatient(parts = {}) {
 }
 
 function reset() {
+	otherPerson.value = false
+	otherPatient.value = { lastName: '', firstName: '', middleName: '', phone: '' }
 	branchId.value = null
 	serviceId.value = null
 	masterId.value = null
@@ -139,6 +148,7 @@ export function useBooking() {
 		appointmentPayload,
 		isComplete,
 		patient,
+		otherPerson,
 		patientReady,
 		fillPatient,
 	}

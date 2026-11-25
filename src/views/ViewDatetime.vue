@@ -26,6 +26,8 @@ import UiPageTitle from '@/components/ui/UiPageTitle.vue'
 import UiLoader from '@/components/ui/UiLoader.vue'
 import BookingConfirm from '@/components/booking/BookingConfirm.vue'
 import { createAppointment } from '@/api/appointments'
+import { registerPatient } from '@/api/users'
+import { submitPatientBooking } from '@/api/patientBooking'
 import { fullNameOf } from '@/api/coworkers'
 import {
 	branchServices,
@@ -51,6 +53,7 @@ const {
 	appointmentPayload,
 	isComplete,
 	patient,
+	otherPerson,
 	patientReady,
 	fillPatient,
 } = useBooking()
@@ -286,6 +289,7 @@ function cancel() {
 
 const saving = ref(false)
 const saveError = ref('')
+const patientDraft = {}
 
 // Успех подтверждаем окном поверх экрана: мгновенный переход не читался —
 // человек не понимал, оформилась запись или нет. Уйти с экрана можно только
@@ -297,6 +301,7 @@ const success = ref(false)
 // Финал флоу: фиксируем выбор и создаём запись. При успехе состояние сбрасываем,
 // чтобы следующая запись начиналась с чистого листа.
 async function submit() {
+	if (saving.value) return
 	if (!patientReady()) {
 		saveError.value = 'Укажите фамилию и имя.'
 		return
@@ -309,13 +314,24 @@ async function submit() {
 	saving.value = true
 	saveError.value = ''
 	try {
-		await createAppointment(appointmentPayload())
+		await submitPatientBooking({
+			otherPerson: otherPerson.value,
+			patient: patient.value,
+			payload: appointmentPayload(),
+			draft: patientDraft,
+			register: registerPatient,
+			create: createAppointment,
+			newKey: () => crypto.randomUUID(),
+		})
 		reset()
 		confirming.value = false
 		success.value = true
 	} catch (e) {
 		console.warn('[datetime] appointment/create failed', e)
-		saveError.value = apiErrorMessage(e, 'Не удалось создать запись. Попробуйте позже.')
+		saveError.value = apiErrorMessage(
+			e,
+			e.message || 'Не удалось создать запись. Попробуйте позже.',
+		)
 	} finally {
 		saving.value = false
 	}
@@ -466,6 +482,8 @@ async function submit() {
 
 		<BookingConfirm
 			v-model:open="confirming"
+			v-model:other-person="otherPerson"
+			v-model:phone="patient.phone"
 			v-model:last-name="patient.lastName"
 			v-model:first-name="patient.firstName"
 			v-model:middle-name="patient.middleName"

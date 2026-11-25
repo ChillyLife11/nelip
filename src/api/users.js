@@ -1,6 +1,10 @@
 import { api } from '@/api/http'
 import { COMPANY_ID } from '@/config'
 
+export function registerPatient(payload) {
+	return api.post('/user/register-patient', payload).then((r) => r.data)
+}
+
 // Поиск клиента по телефону — вход в приложение.
 // Возвращает клиента с access_token или null, если такого номера нет.
 // `company_id` — в какой клинике искать: база общая на всех (просьба бэкендера).

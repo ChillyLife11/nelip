@@ -7,6 +7,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle } from 'reka-ui'
 import { Settings2, X } from '@lucide/vue'
 import UiBtn from '@/components/ui/UiBtn.vue'
+import { validPatientPhone } from '@/api/patientBooking'
 
 const open = defineModel('open', { type: Boolean, default: false })
 
@@ -15,8 +16,16 @@ const open = defineModel('open', { type: Boolean, default: false })
 const lastName = defineModel('lastName', { type: String, default: '' })
 const firstName = defineModel('firstName', { type: String, default: '' })
 const middleName = defineModel('middleName', { type: String, default: '' })
+const otherPerson = defineModel('otherPerson', { type: Boolean, default: false })
+const phone = defineModel('phone', { type: String, default: '' })
 
-const nameReady = computed(() => Boolean(lastName.value.trim() && firstName.value.trim()))
+const nameReady = computed(() =>
+	Boolean(
+		lastName.value.trim() &&
+		firstName.value.trim() &&
+		(!otherPerson.value || validPatientPhone(phone.value)),
+	),
+)
 
 // Кнопка подтверждения всегда активна (просьба клиники 28.10.2026): по нажатию
 // проверяем обязательные поля, подсвечиваем незаполненные красным с подписью
@@ -26,11 +35,16 @@ const showErrors = ref(false)
 const errors = computed(() => ({
 	lastName: showErrors.value && !lastName.value.trim() ? 'Укажите фамилию' : '',
 	firstName: showErrors.value && !firstName.value.trim() ? 'Укажите имя' : '',
+	phone:
+		showErrors.value && otherPerson.value && !validPatientPhone(phone.value)
+			? 'Укажите корректный телефон пациента'
+			: '',
 }))
 
 // Поля в порядке на экране — к первому незаполненному и прокручиваем.
 const lastNameInput = ref(null)
 const firstNameInput = ref(null)
+const phoneInput = ref(null)
 
 async function confirm() {
 	if (nameReady.value) {
@@ -40,7 +54,11 @@ async function confirm() {
 	showErrors.value = true
 	editingName.value = true
 	await nextTick()
-	const target = !lastName.value.trim() ? lastNameInput.value : firstNameInput.value
+	const target = !lastName.value.trim()
+		? lastNameInput.value
+		: !firstName.value.trim()
+			? firstNameInput.value
+			: phoneInput.value
 	target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 const fullName = computed(() =>
@@ -54,6 +72,10 @@ const fullName = computed(() =>
 // остальных строк сводки. Решаем в момент открытия окна, чтобы поля не
 // схлопывались прямо под пальцами, когда человек дописал имя.
 const editingName = ref(false)
+watch(otherPerson, () => {
+	editingName.value = true
+	showErrors.value = false
+})
 watch(
 	open,
 	(isOpen) => {
@@ -105,84 +127,138 @@ const emit = defineEmits(['confirm', 'cancel', 'edit'])
 					</button>
 				</div>
 
-				<dl class="mt-4 space-y-4">
-					<div>
-						<dt class="text-15 font-semibold text-black">ФИО:</dt>
-						<dd v-if="!editingName" class="flex items-center gap-2 text-15 text-gray">
-							<span>{{ fullName }}</span>
-							<button
-								type="button"
-								class="shrink-0 text-gray duration-60 active:scale-[0.92]"
-								aria-label="Изменить: ФИО"
-								@click="editingName = true"
+				<fieldset :disabled="saving" class="min-w-0 disabled:opacity-70">
+					<label class="mt-4 flex items-center gap-2.5 text-15 text-gray cursor-pointer">
+						<input v-model="otherPerson" type="checkbox" class="peer sr-only" />
+						<span
+							aria-hidden="true"
+							class="flex shrink-0 items-center justify-center w-5 h-5 rounded-control bg-secondary-soft peer-checked:bg-brand peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-brand"
+						>
+							<span v-if="otherPerson">✓</span>
+						</span>
+						<span>Записать другого человека</span>
+					</label>
+					<p v-if="otherPerson" class="mt-2 text-13 text-gray">
+						Укажите данные пациента, который придёт на приём.
+					</p>
+					<dl class="mt-4 space-y-4">
+						<div>
+							<dt class="text-15 font-semibold text-black">ФИО:</dt>
+							<dd
+								v-if="!editingName"
+								class="flex items-center gap-2 text-15 text-gray"
 							>
-								<Settings2 :size="18" :stroke-width="1.5" />
-							</button>
-						</dd>
-						<dd v-else class="mt-2 space-y-2">
-							<div>
+								<span>{{ fullName }}</span>
+								<button
+									type="button"
+									class="shrink-0 text-gray duration-60 active:scale-[0.92]"
+									aria-label="Изменить: ФИО"
+									@click="editingName = true"
+								>
+									<Settings2 :size="18" :stroke-width="1.5" />
+								</button>
+							</dd>
+							<dd v-else class="mt-2 space-y-2">
+								<div>
+									<input
+										ref="lastNameInput"
+										v-model="lastName"
+										type="text"
+										autocomplete="family-name"
+										placeholder="Фамилия *"
+										:aria-invalid="Boolean(errors.lastName)"
+										:class="
+											errors.lastName
+												? 'border-danger'
+												: 'border-secondary-soft focus:border-brand'
+										"
+										class="block w-full py-2.5 px-4 rounded-control border bg-card-darker text-15 text-gray outline-none placeholder:text-gray/50"
+									/>
+									<p v-if="errors.lastName" class="mt-1 px-1 text-12 text-danger">
+										{{ errors.lastName }}
+									</p>
+								</div>
+								<div>
+									<input
+										ref="firstNameInput"
+										v-model="firstName"
+										type="text"
+										autocomplete="given-name"
+										placeholder="Имя *"
+										:aria-invalid="Boolean(errors.firstName)"
+										:class="
+											errors.firstName
+												? 'border-danger'
+												: 'border-secondary-soft focus:border-brand'
+										"
+										class="block w-full py-2.5 px-4 rounded-control border bg-card-darker text-15 text-gray outline-none placeholder:text-gray/50"
+									/>
+									<p
+										v-if="errors.firstName"
+										class="mt-1 px-1 text-12 text-danger"
+									>
+										{{ errors.firstName }}
+									</p>
+								</div>
 								<input
-									ref="lastNameInput"
-									v-model="lastName"
+									v-model="middleName"
 									type="text"
-									autocomplete="family-name"
-									placeholder="Фамилия *"
-									:aria-invalid="Boolean(errors.lastName)"
+									autocomplete="additional-name"
+									placeholder="Отчество"
+									class="block w-full py-2.5 px-4 rounded-control border border-secondary-soft bg-card-darker text-15 text-gray outline-none focus:border-brand placeholder:text-gray/50"
+								/>
+							</dd>
+						</div>
+						<div v-if="otherPerson">
+							<dt class="text-15 font-semibold text-black">
+								<label for="other-patient-phone">Телефон пациента:</label>
+							</dt>
+							<dd class="mt-2">
+								<input
+									id="other-patient-phone"
+									ref="phoneInput"
+									v-model="phone"
+									type="tel"
+									inputmode="tel"
+									autocomplete="off"
+									placeholder="+7 (___) ___-__-__"
+									:aria-invalid="Boolean(errors.phone)"
+									:aria-describedby="
+										errors.phone ? 'patient-phone-error' : undefined
+									"
 									:class="
-										errors.lastName
+										errors.phone
 											? 'border-danger'
 											: 'border-secondary-soft focus:border-brand'
 									"
 									class="block w-full py-2.5 px-4 rounded-control border bg-card-darker text-15 text-gray outline-none placeholder:text-gray/50"
 								/>
-								<p v-if="errors.lastName" class="mt-1 px-1 text-12 text-danger">
-									{{ errors.lastName }}
+								<p
+									v-if="errors.phone"
+									id="patient-phone-error"
+									class="mt-1 px-1 text-12 text-danger"
+								>
+									{{ errors.phone }}
 								</p>
-							</div>
-							<div>
-								<input
-									ref="firstNameInput"
-									v-model="firstName"
-									type="text"
-									autocomplete="given-name"
-									placeholder="Имя *"
-									:aria-invalid="Boolean(errors.firstName)"
-									:class="
-										errors.firstName
-											? 'border-danger'
-											: 'border-secondary-soft focus:border-brand'
-									"
-									class="block w-full py-2.5 px-4 rounded-control border bg-card-darker text-15 text-gray outline-none placeholder:text-gray/50"
-								/>
-								<p v-if="errors.firstName" class="mt-1 px-1 text-12 text-danger">
-									{{ errors.firstName }}
-								</p>
-							</div>
-							<input
-								v-model="middleName"
-								type="text"
-								autocomplete="additional-name"
-								placeholder="Отчество"
-								class="block w-full py-2.5 px-4 rounded-control border border-secondary-soft bg-card-darker text-15 text-gray outline-none focus:border-brand placeholder:text-gray/50"
-							/>
-						</dd>
-					</div>
-					<div v-for="row in rows" :key="row.label">
-						<dt class="text-15 font-semibold text-black">{{ row.label }}:</dt>
-						<dd class="flex items-center gap-2 text-15 text-gray">
-							<span>{{ row.value || '—' }}</span>
-							<button
-								v-if="!row.fixed"
-								type="button"
-								class="shrink-0 text-gray duration-60 active:scale-[0.92]"
-								:aria-label="`Изменить: ${row.label}`"
-								@click="emit('edit', row.step)"
-							>
-								<Settings2 :size="18" :stroke-width="1.5" />
-							</button>
-						</dd>
-					</div>
-				</dl>
+							</dd>
+						</div>
+						<div v-for="row in rows" :key="row.label">
+							<dt class="text-15 font-semibold text-black">{{ row.label }}:</dt>
+							<dd class="flex items-center gap-2 text-15 text-gray">
+								<span>{{ row.value || '—' }}</span>
+								<button
+									v-if="!row.fixed"
+									type="button"
+									class="shrink-0 text-gray duration-60 active:scale-[0.92]"
+									:aria-label="`Изменить: ${row.label}`"
+									@click="emit('edit', row.step)"
+								>
+									<Settings2 :size="18" :stroke-width="1.5" />
+								</button>
+							</dd>
+						</div>
+					</dl>
+				</fieldset>
 
 				<p v-if="error" class="mt-4 text-13 text-center text-gray">{{ error }}</p>
 
