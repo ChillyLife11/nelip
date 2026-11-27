@@ -8,6 +8,7 @@ import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle } f
 import { Settings2, X } from '@lucide/vue'
 import UiBtn from '@/components/ui/UiBtn.vue'
 import { validPatientPhone } from '@/api/patientBooking'
+import { maskPhoneInput } from '@/composables/phoneMask'
 
 const open = defineModel('open', { type: Boolean, default: false })
 
@@ -217,7 +218,7 @@ const emit = defineEmits(['confirm', 'cancel', 'edit'])
 								<input
 									id="other-patient-phone"
 									ref="phoneInput"
-									v-model="phone"
+									:value="phone"
 									type="tel"
 									inputmode="tel"
 									autocomplete="off"
@@ -232,6 +233,7 @@ const emit = defineEmits(['confirm', 'cancel', 'edit'])
 											: 'border-secondary-soft focus:border-brand'
 									"
 									class="block w-full py-2.5 px-4 rounded-control border bg-card-darker text-15 text-gray outline-none placeholder:text-gray/50"
+									@input="phone = maskPhoneInput($event, phone)"
 								/>
 								<p
 									v-if="errors.phone"
