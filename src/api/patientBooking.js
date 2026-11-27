@@ -41,16 +41,18 @@ export async function submitPatientBooking({
 			company_id: payload.company_id,
 			request_key: draft.key,
 		})
+		// Бэкенд отдаёт числа то числом, то строкой («25») — сравниваем через Number().
+		const clientId = Number(result?.client_id)
 		if (
-			!Number.isSafeInteger(result?.client_id) ||
-			result.client_id <= 0 ||
-			result.client_id === Number(payload.client_id) ||
+			!Number.isSafeInteger(clientId) ||
+			clientId <= 0 ||
+			clientId === Number(payload.client_id) ||
 			typeof result.booking_token !== 'string' ||
 			!result.booking_token
 		) {
 			throw new Error('Не удалось зарегистрировать отдельного пациента.')
 		}
-		draft.registration = result
+		draft.registration = { ...result, client_id: clientId }
 	}
 	const result = await create({
 		...payload,

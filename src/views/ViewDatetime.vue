@@ -328,10 +328,10 @@ async function submit() {
 		success.value = true
 	} catch (e) {
 		console.warn('[datetime] appointment/create failed', e)
-		saveError.value = apiErrorMessage(
-			e,
-			e.message || 'Не удалось создать запись. Попробуйте позже.',
-		)
+		// Текст своих ошибок (проверки в patientBooking) показываем как есть, а у
+		// ошибок axios message английский («Network Error») — там общий текст.
+		const fallback = 'Не удалось создать запись. Попробуйте позже.'
+		saveError.value = apiErrorMessage(e, e.isAxiosError ? fallback : e.message || fallback)
 	} finally {
 		saving.value = false
 	}
