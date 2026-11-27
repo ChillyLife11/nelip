@@ -45,6 +45,6 @@ MAX-привязки. Управление зависимыми пациента
 
 ## Проверки
 
-`node --test src/api/patientBooking.test.js`, `npm run build`.
+`npm run build`.
 Сервер: `MEDIX_TEST_VENDOR=... php -d extension=pdo_sqlite tests/nelip_patient_registration.php`.
 Синтетические проверки не создают записей в рабочей МИС.
